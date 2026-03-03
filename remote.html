@@ -43,7 +43,7 @@ body{
 
 #qrBox img,#qrBox canvas,#qrBox table{
   border:var(--border) solid var(--fg);
-  border-radius:0; /* square QR */
+  border-radius:0;
   width:260px !important;
   height:260px !important;
 }
@@ -81,33 +81,11 @@ body{
   opacity:0.25;
 }
 
-/* Manual entry */
-.codeLine{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:14px;
-  margin-top:14px;
-}
-
-/* No box for input */
-input{
-  font-size:24px;
-  text-align:center;
-  border:none;
-  background:transparent;
-  outline:none;
-  width:180px;
-  letter-spacing:4px;
-}
-
-/* Only connect styled */
-.pill{
-  font-size:17px;
-  padding:10px 26px;
-  border:2px solid var(--fg);
-  border-radius:var(--pill);
-  background:#fff;
+/* Code display (no box) */
+.codeText{
+  margin-top:16px;
+  font-size:28px;
+  letter-spacing:6px;
 }
 
 /* Player */
@@ -193,7 +171,15 @@ svg{fill:#000;width:34px;height:34px;}
   margin-top:14px;
 }
 
-/* Hide status entirely (no “Not paired” box) */
+.pill{
+  font-size:17px;
+  padding:10px 22px;
+  border:2px solid var(--fg);
+  border-radius:var(--pill);
+  background:#fff;
+}
+
+/* Hide status entirely */
 #status{display:none;}
 </style>
 </head>
@@ -209,10 +195,7 @@ svg{fill:#000;width:34px;height:34px;}
 
     <div class="divider"></div>
 
-    <div class="codeLine">
-      <input id="code" inputmode="numeric" maxlength="6">
-      <button id="connect" class="pill">Connect</button>
-    </div>
+    <div class="codeText" id="codeText">------</div>
   </div>
 
   <!-- Player card -->
@@ -278,11 +261,12 @@ svg{fill:#000;width:34px;height:34px;}
   var stateDot = document.getElementById("stateDot");
 
   var qrBox = document.getElementById("qrBox");
-  var inputCode = document.getElementById("code");
+  var codeText = document.getElementById("codeText");
   var sleepBtn = document.getElementById("sleep");
 
   var CODE = "";
   var pollTimer = null;
+  var pairWatchTimer = null;
   var pollEnabled = true;
 
   function randCode(){
@@ -335,26 +319,26 @@ svg{fill:#000;width:34px;height:34px;}
   }
 
   function renderQrFor(code){
-    inputCode.value = code;
+    codeText.textContent = code;
 
     if (typeof window.QRCode === "undefined") {
-      qrBox.innerHTML =
-        '<div class="qrFallback">QR library missing.\n\nCheck:\n/kindlifyre/qrcode.min.js</div>';
+      qrBox.innerHTML = '<div class="qrFallback">QR missing.\n\nCheck:\n/kindlifyre/qrcode.min.js</div>';
       return;
     }
 
     qrBox.innerHTML = "";
+    // IMPORTANT: use ?p= for pairing code to avoid collision with Spotify’s ?code=
     new window.QRCode(qrBox, {
-      text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
+      text: PAIR_URL_BASE + "?p=" + encodeURIComponent(code),
       width: 260,
       height: 260,
       correctLevel: window.QRCode.CorrectLevel.M
     });
   }
 
-  function apiState(done){
+  function apiState(code, done){
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", WORKER_BASE + "/state?code=" + encodeURIComponent(CODE), true);
+    xhr.open("GET", WORKER_BASE + "/state?code=" + encodeURIComponent(code), true);
     xhr.onreadystatechange = function(){
       if (xhr.readyState !== 4) return;
       try { done(JSON.parse(xhr.responseText)); }
@@ -369,14 +353,40 @@ svg{fill:#000;width:34px;height:34px;}
     xhr.send(null);
   }
 
-  function refresh(){
-    if (!CODE) return; /* not connected yet -> do nothing */
+  function setConnected(){
+    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
+    elControls.style.display = "flex";
+    elUtility.style.display = "flex";
+    refresh();
+    startPolling();
+  }
 
-    apiState(function(s){
+  function startAutoConnectWatch(code){
+    if (pairWatchTimer) clearInterval(pairWatchTimer);
+
+    pairWatchTimer = setInterval(function(){
+      // If already connected, stop watching.
+      if (CODE) { clearInterval(pairWatchTimer); pairWatchTimer = null; return; }
+
+      apiState(code, function(s){
+        // We only “connect” once the worker says ok:true (paired) OR active playback exists.
+        if (s && s.ok) {
+          CODE = code;
+          try { localStorage.setItem("kindlifyre_code", CODE); } catch(e) {}
+          setConnected();
+        }
+      });
+    }, 4000);
+  }
+
+  function refresh(){
+    if (!CODE) return;
+
+    apiState(CODE, function(s){
       if (!s || !s.ok) return;
 
       if (!s.active) {
-        /* stop polling when inactive (reduces flicker) */
+        // Reduce flicker: stop polling when inactive
         stopPolling();
         return;
       }
@@ -412,21 +422,6 @@ svg{fill:#000;width:34px;height:34px;}
     });
   }
 
-  function connectWithCode(c){
-    CODE = c;
-    try { localStorage.setItem("kindlifyre_code", CODE); } catch(e) {}
-    elControls.style.display = "flex";
-    elUtility.style.display = "flex";
-    refresh();
-    startPolling();
-  }
-
-  document.getElementById("connect").onclick = function(){
-    var c = (inputCode.value || "").replace(/\s+/g,"");
-    if (!/^\d{6}$/.test(c)) return;
-    connectWithCode(c);
-  };
-
   document.getElementById("sleep").onclick = function(){
     pollEnabled = !pollEnabled;
     sleepBtn.textContent = pollEnabled ? "Sleep" : "Wake";
@@ -440,6 +435,8 @@ svg{fill:#000;width:34px;height:34px;}
 
   document.getElementById("newCode").onclick = function(){
     stopPolling();
+    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
+
     CODE = "";
     elControls.style.display = "none";
     elUtility.style.display = "none";
@@ -454,8 +451,10 @@ svg{fill:#000;width:34px;height:34px;}
 
     var fresh = randCode();
     try { localStorage.setItem("kindlifyre_code", fresh); } catch(e) {}
+
     qrBox.innerHTML = '<div class="qrFallback">Loading…</div>';
     renderQrFor(fresh);
+    startAutoConnectWatch(fresh);
   };
 
   document.getElementById("next").onclick = function(){
@@ -472,7 +471,7 @@ svg{fill:#000;width:34px;height:34px;}
 
   document.getElementById("toggle").onclick = function(){
     if (!CODE) return;
-    apiState(function(s){
+    apiState(CODE, function(s){
       if (!s || !s.ok || !s.active) return;
       apiCmd((s.data && s.data.is_playing) ? "pause" : "play");
       setTimeout(function(){ refresh(); }, 400);
@@ -484,11 +483,14 @@ svg{fill:#000;width:34px;height:34px;}
 
     var saved = "";
     try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
+
     var code = /^\d{6}$/.test(saved) ? saved : randCode();
     try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
 
     loadQrLib(function(){
       renderQrFor(code);
+      // Auto-connect watch begins immediately
+      startAutoConnectWatch(code);
     });
   })();
 
