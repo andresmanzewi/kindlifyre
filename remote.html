@@ -6,20 +6,13 @@
 <title>Kindle Spotify Remote</title>
 
 <style>
-:root{ --fg:#000; --muted:#333; --border:2px; --radius:18px; }
+:root{ --fg:#000; --muted:#333; --radius:18px; }
 
-body{
-  font-family:sans-serif;
-  background:#fff;
-  color:#000;
-  margin:18px 10px;
-  text-align:center;
-}
-
-.wrap{max-width:640px;margin:0 auto;}
+body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; text-align:center; }
+.wrap{ max-width:640px; margin:0 auto; }
 
 .card{
-  width:440px;
+  width:480px;
   max-width:92vw;
   margin:0 auto 18px;
   padding:20px 16px 18px;
@@ -28,7 +21,7 @@ body{
   box-sizing:border-box;
 }
 
-/* Pair card */
+/* Pairing */
 #qrBox{ width:300px; height:300px; margin:8px auto 0; }
 #qrBox img,#qrBox canvas,#qrBox table{
   border:2px solid var(--fg);
@@ -37,11 +30,9 @@ body{
   border-radius:0;
 }
 .qrFallback{
-  width:300px;height:300px;
-  border:2px dashed var(--fg);
+  width:300px;height:300px;border:2px dashed var(--fg);
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;color:var(--muted);
-  box-sizing:border-box;
+  font-size:14px;color:var(--muted); box-sizing:border-box;
 }
 .divider{ width:300px; margin:18px auto 0; display:flex; align-items:center; }
 .divider:before,.divider:after{ content:""; flex:1; height:1px; background:#000; opacity:0.25; }
@@ -49,69 +40,40 @@ body{
 
 /* Player */
 .artWrap{
-  width:300px;height:300px;
-  margin:0 auto 14px;
-  border:2px solid var(--fg);
-  border-radius:14px;
-  overflow:hidden;
-  display:none;
-  box-sizing:border-box;
+  width:300px;height:300px;margin:0 auto 14px;
+  border:2px solid var(--fg); border-radius:14px; overflow:hidden;
+  display:none; box-sizing:border-box;
 }
 .artWrap img{ width:100%; height:100%; object-fit:cover; display:block; }
 
 .track{
-  font-size:22px;
-  line-height:1.25;
-  margin:8px 0 6px;
-  min-height:56px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
+  font-size:22px; line-height:1.25; margin:8px 0 6px;
+  min-height:56px; overflow:hidden; text-overflow:ellipsis;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
 }
-
 .artist{
-  font-size:16px;
-  color:var(--muted);
-  margin-bottom:8px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  font-size:16px; color:var(--muted); margin-bottom:8px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
 .deviceType{ min-height:24px; margin-bottom:6px; }
 
 .stateDot{
-  width:10px;height:10px;
-  border:2px solid #000;
-  border-radius:999px;
-  margin:6px auto 16px;
+  width:10px;height:10px;border:2px solid #000;border-radius:999px;margin:6px auto 16px;
 }
 .stateDot.playing{ background:#000; }
 
 .controls{
-  display:none;
-  justify-content:center;
-  align-items:center;
-  gap:36px;
-  margin-top:10px;
+  display:none; justify-content:center; align-items:center;
+  gap:36px; margin-top:10px;
 }
 .roundBtn{
-  width:82px;height:82px;
-  border-radius:999px;
-  border:2px solid var(--fg);
-  background:#fff;
-  display:grid;
-  place-items:center;
-  padding:0;
+  width:82px;height:82px;border-radius:999px;border:2px solid var(--fg);
+  background:#fff; display:grid; place-items:center; padding:0;
 }
 .roundBtn.center{ width:92px;height:92px; }
 .controls svg{ display:block; margin:0 auto; fill:#000; width:34px;height:34px; }
 .roundBtn.center svg{ width:40px;height:40px; }
-
-/* Hide any text status */
-#status{display:none;}
 </style>
 </head>
 
@@ -143,28 +105,18 @@ body{
 
     <div class="controls" id="controls">
       <button class="roundBtn" id="prev" aria-label="Previous">
-        <svg viewBox="0 0 64 64">
-          <path d="M50 16v32L26 32l24-16zM14 16v32l10-8V24l-10-8z"></path>
-        </svg>
+        <svg viewBox="0 0 64 64"><path d="M50 16v32L26 32l24-16zM14 16v32l10-8V24l-10-8z"></path></svg>
       </button>
 
       <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
-        <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;">
-          <path d="M26 16v32l26-16-26-16z"></path>
-        </svg>
-        <svg id="iconPause" viewBox="0 0 64 64" style="display:none;">
-          <path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path>
-        </svg>
+        <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M26 16v32l26-16-26-16z"></path></svg>
+        <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
       </button>
 
       <button class="roundBtn" id="next" aria-label="Next">
-        <svg viewBox="0 0 64 64">
-          <path d="M14 16v32l24-16-24-16zM40 16v32l10-8V24l-10-8z"></path>
-        </svg>
+        <svg viewBox="0 0 64 64"><path d="M14 16v32l24-16-24-16zM40 16v32l10-8V24l-10-8z"></path></svg>
       </button>
     </div>
-
-    <div id="status"></div>
   </div>
 
 </div>
@@ -193,7 +145,6 @@ body{
   var CODE = "";
   var pollTimer = null;
   var pairWatchTimer = null;
-  var warmUntil = 0;
 
   function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
 
@@ -212,11 +163,13 @@ body{
     else iconComputer.style.display = "block";
   }
 
-  function chooseArt(playerData){
-    // expects Spotify /me/player JSON at playerData
-    if (!playerData || !playerData.item || !playerData.item.album || !playerData.item.album.images) return "";
-    var imgs = playerData.item.album.images;
+  function chooseArt(pb){
+    // pb is Spotify /v1/me/player JSON
+    if (!pb || !pb.item || !pb.item.album || !pb.item.album.images) return "";
+    var imgs = pb.item.album.images;
     if (!imgs.length) return "";
+    // prefer 300px (index 1 typically), else mid, else first
+    if (imgs[1] && imgs[1].url) return imgs[1].url;
     var mid = imgs[Math.floor(imgs.length/2)];
     return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
   }
@@ -269,30 +222,27 @@ body{
     stopPolling();
     if (!CODE) return;
 
-    var interval = (Date.now() < warmUntil) ? 1200 : 8000;
+    // Kindle-safe: 2s for first ~12s, then 8s
+    var fastUntil = Date.now() + 12000;
     pollTimer = setInterval(function(){
       refresh();
-      if (Date.now() >= warmUntil && interval !== 8000) startPolling();
-    }, interval);
+      if (Date.now() > fastUntil) {
+        stopPolling();
+        pollTimer = setInterval(refresh, 8000);
+      }
+    }, 2000);
   }
 
   function setConnected(){
     if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
-    if (pairCard) pairCard.style.display = "none";
-
-    // Show controls immediately upon pairing
+    pairCard.style.display = "none";
     elControls.style.display = "flex";
-
-    warmUntil = Date.now() + 12000;
     refresh();
     startPolling();
   }
 
   function startAutoConnectWatch(code){
     if (pairWatchTimer) clearInterval(pairWatchTimer);
-
-    // Fast check for first ~10s
-    var tries = 0;
     pairWatchTimer = setInterval(function(){
       if (CODE) return;
       apiState(code, function(s){
@@ -301,17 +251,7 @@ body{
           setConnected();
         }
       });
-      tries++;
-      if (tries === 10) {
-        clearInterval(pairWatchTimer);
-        pairWatchTimer = setInterval(function(){
-          if (CODE) return;
-          apiState(code, function(s){
-            if (s && s.ok) { CODE = code; setConnected(); }
-          });
-        }, 4000);
-      }
-    }, 1000);
+    }, 1500);
   }
 
   function refresh(){
@@ -320,12 +260,16 @@ body{
     apiState(CODE, function(s){
       if (!s || !s.ok) return;
 
-      // If Spotify returns 204 -> active false (no current playback)
-      if (!s.active || !s.data) return;
+      if (!s.active || !s.data) {
+        // Not active player: keep UI as-is (no error boxes)
+        return;
+      }
 
       var pb = s.data;
 
-      // Basic fields
+      setPlayingIcon(!!pb.is_playing);
+      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
+
       if (pb.item && pb.item.name) elTrack.textContent = pb.item.name;
 
       if (pb.item && pb.item.artists && pb.item.artists.length) {
@@ -333,9 +277,6 @@ body{
         for (var i=0;i<pb.item.artists.length;i++) names.push(pb.item.artists[i].name);
         elArtist.textContent = names.join(", ");
       }
-
-      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
-      setPlayingIcon(!!pb.is_playing);
 
       var art = chooseArt(pb);
       if (art) {
@@ -349,28 +290,18 @@ body{
   }
 
   // Controls
-  document.getElementById("next").onclick = function(){
-    if (!CODE) return;
-    apiCmd("next");
-    setTimeout(refresh, 350);
-  };
-
-  document.getElementById("prev").onclick = function(){
-    if (!CODE) return;
-    apiCmd("prev");
-    setTimeout(refresh, 350);
-  };
-
+  document.getElementById("next").onclick = function(){ if (!CODE) return; apiCmd("next"); setTimeout(refresh, 500); };
+  document.getElementById("prev").onclick = function(){ if (!CODE) return; apiCmd("prev"); setTimeout(refresh, 500); };
   document.getElementById("toggle").onclick = function(){
     if (!CODE) return;
     apiState(CODE, function(s){
       if (!s || !s.ok || !s.active || !s.data) return;
       apiCmd(s.data.is_playing ? "pause" : "play");
-      setTimeout(refresh, 300);
+      setTimeout(refresh, 500);
     });
   };
 
-  // INIT: stable code until you clear browser storage
+  // INIT: stable pairing code
   (function init(){
     setPlayingIcon(false);
 
@@ -388,6 +319,5 @@ body{
 
 })();
 </script>
-
 </body>
 </html>
