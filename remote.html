@@ -9,8 +9,8 @@
 :root{
   --fg:#000;
   --muted:#333;
-  --border:3px;          /* heavy borders used elsewhere */
-  --softBorder:2px;      /* softer border for outer QR card */
+  --border:3px;          /* heavy borders */
+  --softBorder:2px;      /* softer border for cards */
   --radius:16px;
   --pill:999px;
 }
@@ -25,16 +25,16 @@ body{
 
 .wrap{max-width:520px;margin:0 auto;}
 
-/* Outer pairing card (soft) */
-.qrArea{
+/* Shared “card” style */
+.card{
   width:292px;
-  margin:0 auto 18px;
-  padding:22px 14px 18px;               /* more air above */
+  margin:0 auto 16px;
+  padding:18px 14px 16px;
   border:var(--softBorder) solid var(--fg);
   border-radius:var(--radius);
 }
 
-/* QR container */
+/* Pairing (QR) card */
 #qrBox{
   width:260px;
   height:260px;
@@ -82,7 +82,7 @@ body{
   flex:1;
   height:1px;
   background:#000;
-  opacity:0.35; /* soften line */
+  opacity:0.35;
 }
 
 /* Manual entry (secondary) */
@@ -91,9 +91,9 @@ body{
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  gap:12px;           /* input/button spacing */
-  margin-top:12px;    /* space under divider */
-  opacity:0.88;       /* slightly secondary */
+  gap:12px;
+  margin-top:12px;
+  opacity:0.88;
 }
 
 input{
@@ -109,12 +109,11 @@ input{
 .pill{
   font-size:17px;
   padding:10px 22px;
-  border:2px solid var(--fg);          /* lighter than main borders */
+  border:2px solid var(--fg);
   border-radius:var(--pill);
   background:#fff;
 }
 
-/* One instruction only, inside card */
 .hint{
   font-size:13px;
   color:var(--muted);
@@ -122,10 +121,13 @@ input{
   line-height:1.3;
 }
 
-/* Album art + playback */
+/* Player card */
+.playerCard{ padding:14px 14px 16px; }
+
+/* Album art */
 .artWrap{
-  width:280px;height:280px;
-  margin:16px auto 12px;
+  width:264px;height:264px;
+  margin:0 auto 12px;
   border:var(--border) solid var(--fg);
   border-radius:14px;
   overflow:hidden;
@@ -134,26 +136,45 @@ input{
 }
 .artWrap img{width:100%;height:100%;object-fit:cover;}
 
+/* Track/artist */
 .track{
   font-size:20px;
   line-height:1.25;
-  margin:10px 0 6px;
+  margin:8px 0 6px;
   min-height:52px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
 }
 .artist{
   font-size:16px;
   color:var(--muted);
   margin-bottom:6px;
   min-height:20px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
+/* Device icon row */
 .deviceType{
   display:flex;
   justify-content:center;
   align-items:center;
   min-height:22px;
-  margin-bottom:12px;
+  margin-bottom:6px;
 }
+
+/* Play state dot */
+.stateDot{
+  width:10px;height:10px;
+  border:2px solid #000;
+  border-radius:999px;
+  margin:6px auto 12px;
+}
+.stateDot.playing{ background:#000; }
 
 /* Transport controls */
 .controls{
@@ -161,7 +182,7 @@ input{
   justify-content:center;
   align-items:center;
   gap:18px;
-  margin-top:10px;
+  margin-top:2px;
 }
 .roundBtn{
   width:86px;height:86px;
@@ -178,6 +199,7 @@ input{
 svg{fill:#000;width:34px;height:34px;}
 .center svg{width:40px;height:40px;}
 
+/* Utility row */
 .utility{
   display:none;
   justify-content:center;
@@ -198,7 +220,8 @@ svg{fill:#000;width:34px;height:34px;}
 <body>
 <div class="wrap">
 
-  <div class="qrArea">
+  <!-- Pairing card -->
+  <div class="card">
     <div id="qrBox">
       <div class="qrFallback" id="qrFallback">Loading QR…</div>
     </div>
@@ -215,41 +238,48 @@ svg{fill:#000;width:34px;height:34px;}
     </div>
   </div>
 
-  <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
+  <!-- Player card -->
+  <div class="card playerCard">
+    <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
 
-  <div class="track" id="track">—</div>
-  <div class="artist" id="artist"></div>
+    <div class="track" id="track">—</div>
+    <div class="artist" id="artist"></div>
 
-  <div class="deviceType" id="deviceType">
-    <svg id="iconPhone" viewBox="0 0 64 64" style="display:none;width:22px;height:22px;">
-      <path d="M22 6h20a6 6 0 0 1 6 6v40a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6zm0 8v36h20V14H22z"></path>
-    </svg>
-    <svg id="iconComputer" viewBox="0 0 64 64" style="display:none;width:24px;height:24px;">
-      <path d="M8 12h48a4 4 0 0 1 4 4v26a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4zm0 6v22h48V18H8zm18 30h12l2 6H24l2-6z"></path>
-    </svg>
+    <div class="deviceType" id="deviceType">
+      <svg id="iconPhone" viewBox="0 0 64 64" style="display:none;width:22px;height:22px;">
+        <path d="M22 6h20a6 6 0 0 1 6 6v40a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6zm0 8v36h20V14H22z"></path>
+      </svg>
+      <svg id="iconComputer" viewBox="0 0 64 64" style="display:none;width:24px;height:24px;">
+        <path d="M8 12h48a4 4 0 0 1 4 4v26a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4zm0 6v22h48V18H8zm18 30h12l2 6H24l2-6z"></path>
+      </svg>
+    </div>
+
+    <div class="stateDot" id="stateDot"></div>
+
+    <div class="controls" id="controls">
+      <button class="roundBtn" id="prev" aria-label="Previous">
+        <svg viewBox="0 0 64 64"><path d="M18 14h6v36h-6zM46 16 26 32l20 16V16z"></path></svg>
+      </button>
+
+      <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
+        <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M24 18v28l24-14-24-14z"></path></svg>
+        <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
+      </button>
+
+      <button class="roundBtn" id="next" aria-label="Next">
+        <svg viewBox="0 0 64 64"><path d="M40 14h6v36h-6zM18 16v32l20-16-20-16z"></path></svg>
+      </button>
+    </div>
+
+    <div class="utility" id="utility">
+      <button id="refresh" class="pill">Refresh</button>
+      <button id="sleep" class="pill">Sleep</button>
+      <button id="newCode" class="pill">New code</button>
+    </div>
+
+    <div id="status"></div>
   </div>
 
-  <div class="controls" id="controls">
-    <button class="roundBtn" id="prev" aria-label="Previous">
-      <svg viewBox="0 0 64 64"><path d="M18 14h6v36h-6zM46 16 26 32l20 16V16z"></path></svg>
-    </button>
-
-    <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
-      <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M24 18v28l24-14-24-14z"></path></svg>
-      <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
-    </button>
-
-    <button class="roundBtn" id="next" aria-label="Next">
-      <svg viewBox="0 0 64 64"><path d="M40 14h6v36h-6zM18 16v32l20-16-20-16z"></path></svg>
-    </button>
-  </div>
-
-  <div class="utility" id="utility">
-    <button id="refresh" class="pill">Refresh</button>
-    <button id="newCode" class="pill">New code</button>
-  </div>
-
-  <div id="status"></div>
 </div>
 
 <script>
@@ -270,13 +300,18 @@ svg{fill:#000;width:34px;height:34px;}
   var iconPhone = document.getElementById("iconPhone");
   var iconComputer = document.getElementById("iconComputer");
 
+  var stateDot = document.getElementById("stateDot");
+
   var qrBox = document.getElementById("qrBox");
   var qrFallback = document.getElementById("qrFallback");
   var inputCode = document.getElementById("code");
   var hint = document.getElementById("hint");
 
+  var sleepBtn = document.getElementById("sleep");
+
   var CODE = "";
   var pollTimer = null;
+  var pollEnabled = true;
 
   function setStatus(t){ elStatus.textContent = t || ""; }
 
@@ -287,6 +322,9 @@ svg{fill:#000;width:34px;height:34px;}
   function setPlayingIcon(isPlaying){
     iconPlay.style.display = isPlaying ? "none" : "block";
     iconPause.style.display = isPlaying ? "block" : "none";
+    if (stateDot) {
+      stateDot.className = "stateDot" + (isPlaying ? " playing" : "");
+    }
   }
 
   function setDeviceIcon(type){
@@ -358,6 +396,23 @@ svg{fill:#000;width:34px;height:34px;}
     xhr.send(null);
   }
 
+  function stopPolling(){
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function startPolling(){
+    stopPolling();
+    if (!pollEnabled) return;
+    pollTimer = setInterval(function(){ refresh(); }, 12000);
+  }
+
+  function setSleepMode(on){
+    pollEnabled = !on;
+    if (sleepBtn) sleepBtn.textContent = on ? "Wake" : "Sleep";
+    if (on) stopPolling();
+    else startPolling();
+  }
+
   function refresh(){
     apiState(function(s){
       if (!s || !s.ok) { setStatus("Error: " + (s && s.error ? s.error : "state")); return; }
@@ -368,6 +423,9 @@ svg{fill:#000;width:34px;height:34px;}
         elArtWrap.style.display = "none";
         setDeviceIcon("");
         setPlayingIcon(false);
+
+        /* Reduce flicker: stop polling when inactive */
+        stopPolling();
         return;
       }
 
@@ -375,6 +433,7 @@ svg{fill:#000;width:34px;height:34px;}
       var item = pb.item || null;
 
       elTrack.textContent = item && item.name ? item.name : "Unknown";
+
       if (item && item.artists && item.artists.length) {
         var names = [];
         for (var i=0;i<item.artists.length;i++) names.push(item.artists[i].name);
@@ -393,8 +452,14 @@ svg{fill:#000;width:34px;height:34px;}
           elArt.src = art;
         }
         elArtWrap.style.display = "block";
+      } else {
+        elArtWrap.style.display = "none";
       }
+
       setStatus("");
+
+      /* If active and polling enabled but timer was stopped, restart */
+      if (pollEnabled && !pollTimer) startPolling();
     });
   }
 
@@ -404,8 +469,7 @@ svg{fill:#000;width:34px;height:34px;}
     elControls.style.display = "flex";
     elUtility.style.display = "flex";
     refresh();
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(refresh, 12000);
+    startPolling();
   }
 
   document.getElementById("connect").onclick = function(){
@@ -414,10 +478,18 @@ svg{fill:#000;width:34px;height:34px;}
     connectWithCode(c);
   };
 
-  document.getElementById("refresh").onclick = function(){ refresh(); };
+  document.getElementById("refresh").onclick = function(){
+    if (!pollEnabled) setStatus("Sleep is on. Tap Wake to resume polling.");
+    refresh();
+  };
+
+  document.getElementById("sleep").onclick = function(){
+    setSleepMode(pollEnabled); /* toggle */
+    setStatus("");
+  };
 
   document.getElementById("newCode").onclick = function(){
-    if (pollTimer) clearInterval(pollTimer);
+    stopPolling();
     elControls.style.display = "none";
     elUtility.style.display = "none";
     elArtWrap.style.display = "none";
@@ -425,6 +497,8 @@ svg{fill:#000;width:34px;height:34px;}
     elArtist.textContent = "";
     setDeviceIcon("");
     setPlayingIcon(false);
+
+    setSleepMode(false); /* ensure polling enabled for next connect */
 
     var fresh = randCode();
     try { localStorage.setItem("kindlifyre_code", fresh); } catch(e) {}
@@ -434,21 +508,24 @@ svg{fill:#000;width:34px;height:34px;}
   };
 
   document.getElementById("next").onclick = function(){
-    apiCmd("next", function(){ setTimeout(refresh, 500); });
+    apiCmd("next", function(){ setTimeout(function(){ refresh(); }, 500); });
   };
   document.getElementById("prev").onclick = function(){
-    apiCmd("prev", function(){ setTimeout(refresh, 500); });
+    apiCmd("prev", function(){ setTimeout(function(){ refresh(); }, 500); });
   };
   document.getElementById("toggle").onclick = function(){
     apiState(function(s){
       if (!s || !s.ok || !s.active) { setStatus("Start playback first."); return; }
-      apiCmd(s.data && s.data.is_playing ? "pause" : "play", function(){ setTimeout(refresh, 400); });
+      apiCmd((s.data && s.data.is_playing) ? "pause" : "play", function(){
+        setTimeout(function(){ refresh(); }, 400);
+      });
     });
   };
 
   (function init(){
-    setStatus("");              /* no duplicate instructions outside */
+    setStatus("");          /* no duplicate instructions outside */
     setPlayingIcon(false);
+    setSleepMode(false);    /* default awake */
 
     var saved = "";
     try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
