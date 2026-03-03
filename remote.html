@@ -38,6 +38,18 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 .divider:before,.divider:after{ content:""; flex:1; height:1px; background:#000; opacity:0.25; }
 .codeText{ margin-top:16px; font-size:30px; letter-spacing:6px; }
 
+/* New code control */
+.newCode{
+  margin-top:12px;
+  font-size:14px;
+  letter-spacing:2px;
+  opacity:0.75;
+  user-select:none;
+  -webkit-user-select:none;
+  cursor:pointer;
+}
+.newCode:active{ opacity:1; }
+
 /* Player */
 .artWrap{
   width:300px;height:300px;margin:0 auto 14px;
@@ -84,6 +96,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     <div id="qrBox"><div class="qrFallback">Loading…</div></div>
     <div class="divider"></div>
     <div class="codeText" id="codeText">------</div>
+    <div class="newCode" id="newCode">NEW CODE</div>
   </div>
 
   <div class="card">
@@ -129,6 +142,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   var pairCard = document.getElementById("pairCard");
   var qrBox = document.getElementById("qrBox");
   var codeText = document.getElementById("codeText");
+  var newCodeBtn = document.getElementById("newCode");
 
   var elTrack = document.getElementById("track");
   var elArtist = document.getElementById("artist");
@@ -145,6 +159,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   var CODE = "";
   var pollTimer = null;
   var pairWatchTimer = null;
+  var currentPairCode = "";
 
   function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
 
@@ -164,11 +179,9 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   }
 
   function chooseArt(pb){
-    // pb is Spotify /v1/me/player JSON
     if (!pb || !pb.item || !pb.item.album || !pb.item.album.images) return "";
     var imgs = pb.item.album.images;
     if (!imgs.length) return "";
-    // prefer 300px (index 1 typically), else mid, else first
     if (imgs[1] && imgs[1].url) return imgs[1].url;
     var mid = imgs[Math.floor(imgs.length/2)];
     return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
@@ -183,7 +196,9 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   }
 
   function renderQrFor(code){
+    currentPairCode = code;
     codeText.textContent = code;
+
     if (typeof window.QRCode === "undefined") {
       qrBox.innerHTML = '<div class="qrFallback">QR missing</div>';
       return;
@@ -222,7 +237,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     stopPolling();
     if (!CODE) return;
 
-    // Kindle-safe: 2s for first ~12s, then 8s
     var fastUntil = Date.now() + 12000;
     pollTimer = setInterval(function(){
       refresh();
@@ -254,16 +268,27 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     }, 1500);
   }
 
+  function resetToPairing(newCode){
+    CODE = "";
+    stopPolling();
+    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
+
+    pairCard.style.display = "block";
+    elControls.style.display = "none";
+    elArtWrap.style.display = "none";
+
+    setPlayingIcon(false);
+    renderQrFor(newCode);
+    startAutoConnectWatch(newCode);
+  }
+
   function refresh(){
     if (!CODE) return;
 
     apiState(CODE, function(s){
       if (!s || !s.ok) return;
 
-      if (!s.active || !s.data) {
-        // Not active player: keep UI as-is (no error boxes)
-        return;
-      }
+      if (!s.active || !s.data) return;
 
       var pb = s.data;
 
@@ -299,6 +324,13 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
       apiCmd(s.data.is_playing ? "pause" : "play");
       setTimeout(refresh, 500);
     });
+  };
+
+  // NEW CODE button
+  newCodeBtn.onclick = function(){
+    var code = randCode();
+    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
+    resetToPairing(code);
   };
 
   // INIT: stable pairing code
