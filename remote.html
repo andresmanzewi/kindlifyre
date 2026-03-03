@@ -52,25 +52,29 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 /* Player */
 .artWrap{
   width:300px;height:300px;margin:0 auto 14px;
-  border:2px solid var(--fg); border-radius:14px; overflow:hidden;
-  display:none; box-sizing:border-box;
+  border:0;                 /* removed artwork border */
+  border-radius:14px;
+  overflow:hidden;
+  display:none;
+  box-sizing:border-box;
 }
 .artWrap img{ width:100%; height:100%; object-fit:cover; display:block; }
 
 .track{
-  font-size:22px; line-height:1.25; margin:8px 0 6px;
+  font-size:22px; line-height:1.25; margin:8px 0 4px;
   min-height:56px; overflow:hidden; text-overflow:ellipsis;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
 }
 .artist{
-  font-size:16px; color:var(--muted); margin-bottom:8px;
+  font-size:16px; color:var(--muted);
+  margin:0 0 2px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
 /* Only the icon shows; tap icon to open picker */
 .deviceType{
   min-height:28px;
-  margin:6px 0 8px;
+  margin:4px 0 6px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -350,7 +354,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     stopPolling();
     if (!CODE) return;
 
-    // Kindle-safe: 2s for first ~12s, then 6s steady
     var fastUntil = Date.now() + 12000;
     pollTimer = setInterval(function(){
       refresh();
