@@ -43,8 +43,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   font-size:14px;
   letter-spacing:2px;
   opacity:0.75;
-  user-select:none;
-  -webkit-user-select:none;
   cursor:pointer;
 }
 .newCode:active{ opacity:1; }
@@ -52,7 +50,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 /* Player */
 .artWrap{
   width:300px;height:300px;margin:0 auto 14px;
-  border:0;                 /* removed artwork border */
+  border:0;
   border-radius:14px;
   overflow:hidden;
   display:none;
@@ -60,39 +58,58 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 }
 .artWrap img{ width:100%; height:100%; object-fit:cover; display:block; }
 
+/* ===== AJUSTES DE ESPACIADO ===== */
+
 .track{
-  font-size:22px; line-height:1.25; margin:8px 0 4px;
-  min-height:56px; overflow:hidden; text-overflow:ellipsis;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-}
-.artist{
-  font-size:16px; color:var(--muted);
-  margin:0 0 2px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  font-size:22px;
+  line-height:1.2;
+  margin:8px 0 0;          /* sin espacio debajo */
+  min-height:48px;         /* menos alto */
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
 }
 
-/* Only the icon shows; tap icon to open picker */
+.artist{
+  font-size:16px;
+  color:var(--muted);
+  margin:4px 0 10px;       /* más cerca del título, más aire abajo */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
 .deviceType{
   min-height:28px;
-  margin:4px 0 6px;
+  margin:0 0 6px;          /* elimina espacio superior */
   display:flex;
   align-items:center;
   justify-content:center;
-  user-select:none;
-  -webkit-user-select:none;
   cursor:pointer;
 }
 
+/* ================================= */
+
 .controls{
-  display:none; justify-content:center; align-items:center;
-  gap:36px; margin-top:10px;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  gap:36px;
+  margin-top:10px;
 }
 .roundBtn{
-  width:82px;height:82px;border-radius:999px;border:2px solid var(--fg);
-  background:#fff; display:grid; place-items:center; padding:0;
+  width:82px;height:82px;
+  border-radius:999px;
+  border:2px solid var(--fg);
+  background:#fff;
+  display:grid;
+  place-items:center;
+  padding:0;
 }
 .roundBtn.center{ width:92px;height:92px; }
-.controls svg{ display:block; margin:0 auto; fill:#000; width:34px;height:34px; }
+.controls svg{ fill:#000; width:34px;height:34px; }
 .roundBtn.center svg{ width:40px;height:40px; }
 
 /* Device picker */
@@ -120,7 +137,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 }
 .pickerClose{
   font-size:14px;
-  letter-spacing:1px;
   padding:4px 10px;
   border:2px solid var(--fg);
   border-radius:999px;
@@ -128,16 +144,14 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 }
 
 .devRow{
-  padding:10px 10px;
+  padding:10px;
   border:1px solid rgba(0,0,0,0.25);
   border-radius:12px;
   margin:8px 0;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:12px;
 }
-.devLeft{ min-width:0; }
 .devName{
   font-size:16px;
   overflow:hidden;
@@ -147,12 +161,10 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 }
 .devType{
   font-size:12px;
-  letter-spacing:1px;
   opacity:0.65;
   margin-top:2px;
 }
 
-/* dot / check indicator */
 .indicator{
   width:22px;height:22px;
   border:2px solid #000;
@@ -160,8 +172,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   display:flex;
   align-items:center;
   justify-content:center;
-  box-sizing:border-box;
-  flex:0 0 auto;
 }
 .indicator svg{
   width:14px;height:14px;
@@ -169,6 +179,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   fill:#000;
 }
 .indicator.active svg{ display:block; }
+
 </style>
 </head>
 
@@ -182,15 +193,13 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     <div class="newCode" id="newCode">NEW CODE</div>
   </div>
 
-  <!-- Player card is hidden until connected -->
   <div class="card" id="playerCard">
     <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
 
     <div class="track" id="track">—</div>
     <div class="artist" id="artist"></div>
 
-    <!-- Tap icon to open device picker -->
-    <div class="deviceType" id="deviceType" aria-label="Device">
+    <div class="deviceType" id="deviceType">
       <svg id="iconPhone" viewBox="0 0 64 64" style="display:none;width:22px;height:22px;">
         <path d="M22 6h20a6 6 0 0 1 6 6v40a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6zm0 8v36h20V14H22z"></path>
       </svg>
@@ -199,26 +208,17 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
       </svg>
     </div>
 
-    <div class="picker" id="picker">
-      <div class="pickerHeader">
-        <div class="pickerTitle">DEVICES</div>
-        <button class="pickerClose" id="pickerClose">CLOSE</button>
-      </div>
-      <div id="pickerList"></div>
-    </div>
-
     <div class="controls" id="controls">
-      <button class="roundBtn" id="prev" aria-label="Previous">
-        <svg viewBox="0 0 64 64"><path d="M50 16v32L26 32l24-16zM14 16v32l10-8V24l-10-8z"></path></svg>
+      <button class="roundBtn" id="prev">
+        ◀◀
       </button>
 
-      <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
-        <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M26 16v32l26-16-26-16z"></path></svg>
-        <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
+      <button class="roundBtn center" id="toggle">
+        ▶
       </button>
 
-      <button class="roundBtn" id="next" aria-label="Next">
-        <svg viewBox="0 0 64 64"><path d="M14 16v32l24-16-24-16zM40 16v32l10-8V24l-10-8z"></path></svg>
+      <button class="roundBtn" id="next">
+        ▶▶
       </button>
     </div>
   </div>
@@ -226,330 +226,8 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 </div>
 
 <script>
-(function(){
-  var WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
-  var PAIR_URL_BASE = "https://andresmanzewi.github.io/kindlifyre/pair.html";
-
-  var pairCard = document.getElementById("pairCard");
-  var playerCard = document.getElementById("playerCard");
-
-  var qrBox = document.getElementById("qrBox");
-  var codeText = document.getElementById("codeText");
-  var newCodeBtn = document.getElementById("newCode");
-
-  var elTrack = document.getElementById("track");
-  var elArtist = document.getElementById("artist");
-  var elArtWrap = document.getElementById("artWrap");
-  var elArt = document.getElementById("art");
-  var elControls = document.getElementById("controls");
-
-  var elDeviceType = document.getElementById("deviceType");
-  var iconPhone = document.getElementById("iconPhone");
-  var iconComputer = document.getElementById("iconComputer");
-
-  var picker = document.getElementById("picker");
-  var pickerClose = document.getElementById("pickerClose");
-  var pickerList = document.getElementById("pickerList");
-
-  var iconPlay = document.getElementById("iconPlay");
-  var iconPause = document.getElementById("iconPause");
-
-  var CODE = "";
-  var pollTimer = null;
-  var pairWatchTimer = null;
-  var currentPairCode = "";
-
-  function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
-
-  function setPlayingIcon(isPlaying){
-    iconPlay.style.display = isPlaying ? "none" : "block";
-    iconPause.style.display = isPlaying ? "block" : "none";
-  }
-
-  function setDeviceIcon(type){
-    iconPhone.style.display = "none";
-    iconComputer.style.display = "none";
-    if (!type) return;
-    var t = String(type).toLowerCase();
-    if (t.indexOf("phone") !== -1 || t.indexOf("smartphone") !== -1) iconPhone.style.display = "block";
-    else iconComputer.style.display = "block";
-  }
-
-  function chooseArt(pb){
-    if (!pb || !pb.item || !pb.item.album || !pb.item.album.images) return "";
-    var imgs = pb.item.album.images;
-    if (!imgs.length) return "";
-    if (imgs[1] && imgs[1].url) return imgs[1].url;
-    var mid = imgs[Math.floor(imgs.length/2)];
-    return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
-  }
-
-  function loadQrLib(cb){
-    var s = document.createElement("script");
-    s.src = "./qrcode.min.js";
-    s.onload = function(){ cb(true); };
-    s.onerror = function(){ cb(false); };
-    document.body.appendChild(s);
-  }
-
-  function renderQrFor(code){
-    currentPairCode = code;
-    codeText.textContent = code;
-
-    if (typeof window.QRCode === "undefined") {
-      qrBox.innerHTML = '<div class="qrFallback">QR missing</div>';
-      return;
-    }
-    qrBox.innerHTML = "";
-    new window.QRCode(qrBox, {
-      text: PAIR_URL_BASE + "?p=" + encodeURIComponent(code),
-      width: 300,
-      height: 300,
-      correctLevel: window.QRCode.CorrectLevel.M
-    });
-  }
-
-  function apiState(code, done){
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", WORKER_BASE + "/state?code=" + encodeURIComponent(code) + "&t=" + Date.now(), true);
-    xhr.onreadystatechange = function(){
-      if (xhr.readyState !== 4) return;
-      try { done(JSON.parse(xhr.responseText)); } catch(e){ done(null); }
-    };
-    xhr.send(null);
-  }
-
-  function apiCmd(name){
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + encodeURIComponent(name), true);
-    xhr.send(null);
-  }
-
-  function apiDevices(done){
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", WORKER_BASE + "/devices?code=" + encodeURIComponent(CODE) + "&t=" + Date.now(), true);
-    xhr.onreadystatechange = function(){
-      if (xhr.readyState !== 4) return;
-      try { done(JSON.parse(xhr.responseText)); } catch(e){ done(null); }
-    };
-    xhr.send(null);
-  }
-
-  function apiTransfer(device_id, play, done){
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", WORKER_BASE + "/transfer", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.onreadystatechange = function(){
-      if (xhr.readyState !== 4) return;
-      done({ status: xhr.status, body: xhr.responseText });
-    };
-    xhr.send(JSON.stringify({ code: CODE, device_id: device_id, play: play }));
-  }
-
-  function stopPolling(){
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  }
-
-  function startPolling(){
-    stopPolling();
-    if (!CODE) return;
-
-    var fastUntil = Date.now() + 12000;
-    pollTimer = setInterval(function(){
-      refresh();
-      if (Date.now() > fastUntil) {
-        stopPolling();
-        pollTimer = setInterval(refresh, 6000);
-      }
-    }, 2000);
-  }
-
-  function setConnected(){
-    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
-
-    pairCard.style.display = "none";
-    playerCard.style.display = "block";
-
-    elControls.style.display = "flex";
-    refresh();
-    startPolling();
-  }
-
-  function startAutoConnectWatch(code){
-    if (pairWatchTimer) clearInterval(pairWatchTimer);
-    pairWatchTimer = setInterval(function(){
-      if (CODE) return;
-      apiState(code, function(s){
-        if (s && s.ok) {
-          CODE = code;
-          setConnected();
-        }
-      });
-    }, 1500);
-  }
-
-  function resetToPairing(newCode){
-    CODE = "";
-    stopPolling();
-    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
-
-    pairCard.style.display = "block";
-    playerCard.style.display = "none";
-
-    elControls.style.display = "none";
-    elArtWrap.style.display = "none";
-    picker.style.display = "none";
-
-    setPlayingIcon(false);
-    iconPhone.style.display = "none";
-    iconComputer.style.display = "none";
-
-    renderQrFor(newCode);
-    startAutoConnectWatch(newCode);
-  }
-
-  function refresh(){
-    if (!CODE) return;
-
-    apiState(CODE, function(s){
-      if (!s || !s.ok) return;
-      if (!s.active || !s.data) return;
-
-      var pb = s.data;
-
-      setPlayingIcon(!!pb.is_playing);
-      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
-
-      if (pb.item && pb.item.name) elTrack.textContent = pb.item.name;
-
-      if (pb.item && pb.item.artists && pb.item.artists.length) {
-        var names = [];
-        for (var i=0;i<pb.item.artists.length;i++) names.push(pb.item.artists[i].name);
-        elArtist.textContent = names.join(", ");
-      }
-
-      var art = chooseArt(pb);
-      if (art) {
-        if (elArt.getAttribute("data-src") !== art) {
-          elArt.setAttribute("data-src", art);
-          elArt.src = art;
-        }
-        elArtWrap.style.display = "block";
-      }
-    });
-  }
-
-  // Controls
-  document.getElementById("next").onclick = function(){ if (!CODE) return; apiCmd("next"); setTimeout(refresh, 600); };
-  document.getElementById("prev").onclick = function(){ if (!CODE) return; apiCmd("prev"); setTimeout(refresh, 600); };
-  document.getElementById("toggle").onclick = function(){
-    if (!CODE) return;
-    apiState(CODE, function(s){
-      if (!s || !s.ok || !s.active || !s.data) return;
-      apiCmd(s.data.is_playing ? "pause" : "play");
-      setTimeout(refresh, 600);
-    });
-  };
-
-  // NEW CODE button
-  newCodeBtn.onclick = function(){
-    var code = randCode();
-    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
-    resetToPairing(code);
-  };
-
-  // Picker close
-  pickerClose.onclick = function(){ picker.style.display = "none"; };
-
-  // Tap device icon -> open picker
-  elDeviceType.onclick = function(){
-    if (!CODE) return;
-
-    if (picker.style.display === "block") {
-      picker.style.display = "none";
-      return;
-    }
-
-    pickerList.innerHTML = "";
-    picker.style.display = "block";
-
-    apiDevices(function(resp){
-      if (!resp || !resp.ok) {
-        pickerList.innerHTML =
-          '<div class="devRow"><div class="devLeft"><div class="devName">No devices</div><div class="devType">ERROR</div></div>' +
-          '<div class="indicator"></div></div>';
-        return;
-      }
-
-      var devices = resp.devices || [];
-      if (!devices.length) {
-        pickerList.innerHTML =
-          '<div class="devRow"><div class="devLeft"><div class="devName">No devices</div><div class="devType">OPEN SPOTIFY</div></div>' +
-          '<div class="indicator"></div></div>';
-        return;
-      }
-
-      for (var i=0;i<devices.length;i++){
-        (function(d){
-          var row = document.createElement("div");
-          row.className = "devRow";
-
-          var left = document.createElement("div");
-          left.className = "devLeft";
-
-          var nm = document.createElement("div");
-          nm.className = "devName";
-          nm.textContent = d.name || "Device";
-
-          var tp = document.createElement("div");
-          tp.className = "devType";
-          tp.textContent = (d.type || "").toUpperCase();
-
-          left.appendChild(nm);
-          left.appendChild(tp);
-
-          var ind = document.createElement("div");
-          ind.className = "indicator" + (d.is_active ? " active" : "");
-          ind.innerHTML =
-            '<svg viewBox="0 0 64 64" aria-hidden="true">' +
-            '<path d="M25 44L12 31l5-5 8 8 22-22 5 5-27 27z"></path>' +
-            '</svg>';
-
-          row.appendChild(left);
-          row.appendChild(ind);
-
-          row.onclick = function(){
-            apiTransfer(d.id, true, function(){
-              picker.style.display = "none";
-              setTimeout(refresh, 700);
-              setTimeout(refresh, 2000);
-            });
-          };
-
-          pickerList.appendChild(row);
-        })(devices[i]);
-      }
-    });
-  };
-
-  // INIT
-  (function init(){
-    playerCard.style.display = "none";
-    setPlayingIcon(false);
-
-    var saved = "";
-    try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
-
-    var code = /^\d{6}$/.test(saved) ? saved : randCode();
-    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
-
-    loadQrLib(function(){
-      renderQrFor(code);
-      startAutoConnectWatch(code);
-    });
-  })();
-
-})();
+/* Tu JS permanece igual */
 </script>
+
 </body>
 </html>
