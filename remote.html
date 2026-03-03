@@ -33,6 +33,9 @@ body{
   border-radius:var(--radius);
 }
 
+/* Pairing card */
+#pairCard{}
+
 /* QR */
 #qrBox{
   width:260px;
@@ -81,7 +84,7 @@ body{
   opacity:0.25;
 }
 
-/* Code display (no box) */
+/* Code display */
 .codeText{
   margin-top:16px;
   font-size:28px;
@@ -187,8 +190,8 @@ svg{fill:#000;width:34px;height:34px;}
 <body>
 <div class="wrap">
 
-  <!-- Pairing card -->
-  <div class="card">
+  <!-- Pairing card (auto-hides when connected) -->
+  <div class="card" id="pairCard">
     <div id="qrBox">
       <div class="qrFallback" id="qrFallback">Loading…</div>
     </div>
@@ -217,16 +220,16 @@ svg{fill:#000;width:34px;height:34px;}
     <div class="stateDot" id="stateDot"></div>
 
     <div class="controls" id="controls">
-      <button class="roundBtn" id="prev">
+      <button class="roundBtn" id="prev" aria-label="Previous">
         <svg viewBox="0 0 64 64"><path d="M18 14h6v36h-6zM46 16 26 32l20 16V16z"></path></svg>
       </button>
 
-      <button class="roundBtn center" id="toggle">
+      <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
         <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M24 18v28l24-14-24-14z"></path></svg>
         <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
       </button>
 
-      <button class="roundBtn" id="next">
+      <button class="roundBtn" id="next" aria-label="Next">
         <svg viewBox="0 0 64 64"><path d="M40 14h6v36h-6zM18 16v32l20-16-20-16z"></path></svg>
       </button>
     </div>
@@ -246,6 +249,8 @@ svg{fill:#000;width:34px;height:34px;}
 (function(){
   var WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
   var PAIR_URL_BASE = "https://andresmanzewi.github.io/kindlifyre/pair.html";
+
+  var pairCard = document.getElementById("pairCard");
 
   var elTrack = document.getElementById("track");
   var elArtist = document.getElementById("artist");
@@ -327,7 +332,6 @@ svg{fill:#000;width:34px;height:34px;}
     }
 
     qrBox.innerHTML = "";
-    // IMPORTANT: use ?p= for pairing code to avoid collision with Spotify’s ?code=
     new window.QRCode(qrBox, {
       text: PAIR_URL_BASE + "?p=" + encodeURIComponent(code),
       width: 260,
@@ -355,6 +359,10 @@ svg{fill:#000;width:34px;height:34px;}
 
   function setConnected(){
     if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
+
+    /* Hide pairing card once connected */
+    if (pairCard) pairCard.style.display = "none";
+
     elControls.style.display = "flex";
     elUtility.style.display = "flex";
     refresh();
@@ -365,11 +373,9 @@ svg{fill:#000;width:34px;height:34px;}
     if (pairWatchTimer) clearInterval(pairWatchTimer);
 
     pairWatchTimer = setInterval(function(){
-      // If already connected, stop watching.
       if (CODE) { clearInterval(pairWatchTimer); pairWatchTimer = null; return; }
 
       apiState(code, function(s){
-        // We only “connect” once the worker says ok:true (paired) OR active playback exists.
         if (s && s.ok) {
           CODE = code;
           try { localStorage.setItem("kindlifyre_code", CODE); } catch(e) {}
@@ -386,7 +392,6 @@ svg{fill:#000;width:34px;height:34px;}
       if (!s || !s.ok) return;
 
       if (!s.active) {
-        // Reduce flicker: stop polling when inactive
         stopPolling();
         return;
       }
@@ -449,6 +454,9 @@ svg{fill:#000;width:34px;height:34px;}
     pollEnabled = true;
     sleepBtn.textContent = "Sleep";
 
+    /* Show pairing card again */
+    if (pairCard) pairCard.style.display = "block";
+
     var fresh = randCode();
     try { localStorage.setItem("kindlifyre_code", fresh); } catch(e) {}
 
@@ -489,7 +497,6 @@ svg{fill:#000;width:34px;height:34px;}
 
     loadQrLib(function(){
       renderQrFor(code);
-      // Auto-connect watch begins immediately
       startAutoConnectWatch(code);
     });
   })();
