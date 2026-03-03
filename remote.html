@@ -43,7 +43,7 @@ body{
 
 #qrBox img,#qrBox canvas,#qrBox table{
   border:var(--border) solid var(--fg);
-  border-radius:0;
+  border-radius:0; /* square QR */
   width:260px !important;
   height:260px !important;
 }
@@ -177,6 +177,7 @@ input{
   background:#fff;
   display:grid;
   place-items:center;
+  user-select:none;
 }
 
 .roundBtn.center{width:96px;height:96px;}
@@ -192,8 +193,8 @@ svg{fill:#000;width:34px;height:34px;}
   margin-top:14px;
 }
 
-#status{ display:none; } /* hide status box completely */
-
+/* Hide status entirely (no “Not paired” box) */
+#status{display:none;}
 </style>
 </head>
 
@@ -252,6 +253,8 @@ svg{fill:#000;width:34px;height:34px;}
       <button id="sleep" class="pill">Sleep</button>
       <button id="newCode" class="pill">New code</button>
     </div>
+
+    <div id="status"></div>
   </div>
 
 </div>
@@ -276,7 +279,6 @@ svg{fill:#000;width:34px;height:34px;}
 
   var qrBox = document.getElementById("qrBox");
   var inputCode = document.getElementById("code");
-
   var sleepBtn = document.getElementById("sleep");
 
   var CODE = "";
@@ -285,6 +287,16 @@ svg{fill:#000;width:34px;height:34px;}
 
   function randCode(){
     return String(Math.floor(100000 + Math.random()*900000));
+  }
+
+  function stopPolling(){
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function startPolling(){
+    stopPolling();
+    if (!pollEnabled) return;
+    pollTimer = setInterval(function(){ refresh(); }, 12000);
   }
 
   function setPlayingIcon(isPlaying){
@@ -298,7 +310,7 @@ svg{fill:#000;width:34px;height:34px;}
     iconComputer.style.display = "none";
     if (!type) return;
     var t = String(type).toLowerCase();
-    if (t.indexOf("phone") !== -1) iconPhone.style.display = "block";
+    if (t.indexOf("phone") !== -1 || t.indexOf("smartphone") !== -1) iconPhone.style.display = "block";
     else iconComputer.style.display = "block";
   }
 
@@ -307,7 +319,37 @@ svg{fill:#000;width:34px;height:34px;}
     var imgs = item.album.images;
     if (!imgs.length) return "";
     var mid = imgs[Math.floor(imgs.length/2)];
-    return mid && mid.url ? mid.url : imgs[0].url;
+    return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
+  }
+
+  function loadQrLib(cb){
+    var s = document.createElement("script");
+    s.src = "./qrcode.min.js";
+    s.onload = function(){ cb(true); };
+    s.onerror = function(){ cb(false); };
+    document.body.appendChild(s);
+
+    setTimeout(function(){
+      if (typeof window.QRCode === "undefined") cb(false);
+    }, 3000);
+  }
+
+  function renderQrFor(code){
+    inputCode.value = code;
+
+    if (typeof window.QRCode === "undefined") {
+      qrBox.innerHTML =
+        '<div class="qrFallback">QR library missing.\n\nCheck:\n/kindlifyre/qrcode.min.js</div>';
+      return;
+    }
+
+    qrBox.innerHTML = "";
+    new window.QRCode(qrBox, {
+      text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
+      width: 260,
+      height: 260,
+      correctLevel: window.QRCode.CorrectLevel.M
+    });
   }
 
   function apiState(done){
@@ -321,23 +363,39 @@ svg{fill:#000;width:34px;height:34px;}
     xhr.send(null);
   }
 
+  function apiCmd(name){
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + encodeURIComponent(name), true);
+    xhr.send(null);
+  }
+
   function refresh(){
+    if (!CODE) return; /* not connected yet -> do nothing */
+
     apiState(function(s){
-      if (!s || !s.ok || !s.active) return;
+      if (!s || !s.ok) return;
 
-      var pb = s.data;
-      var item = pb.item;
+      if (!s.active) {
+        /* stop polling when inactive (reduces flicker) */
+        stopPolling();
+        return;
+      }
 
-      elTrack.textContent = item && item.name ? item.name : "Unknown";
+      var pb = s.data || {};
+      var item = pb.item || null;
 
-      if (item && item.artists) {
+      elTrack.textContent = item && item.name ? item.name : "—";
+
+      if (item && item.artists && item.artists.length) {
         var names = [];
         for (var i=0;i<item.artists.length;i++) names.push(item.artists[i].name);
         elArtist.textContent = names.join(", ");
+      } else {
+        elArtist.textContent = "";
       }
 
-      setDeviceIcon(pb.device ? pb.device.type : "");
-      setPlayingIcon(pb.is_playing);
+      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
+      setPlayingIcon(!!pb.is_playing);
 
       var art = chooseArt(item);
       if (art) {
@@ -346,19 +404,21 @@ svg{fill:#000;width:34px;height:34px;}
           elArt.src = art;
         }
         elArtWrap.style.display = "block";
+      } else {
+        elArtWrap.style.display = "none";
       }
 
-      if (!pollTimer && pollEnabled) {
-        pollTimer = setInterval(refresh, 12000);
-      }
+      if (pollEnabled && !pollTimer) startPolling();
     });
   }
 
   function connectWithCode(c){
     CODE = c;
+    try { localStorage.setItem("kindlifyre_code", CODE); } catch(e) {}
     elControls.style.display = "flex";
     elUtility.style.display = "flex";
     refresh();
+    startPolling();
   }
 
   document.getElementById("connect").onclick = function(){
@@ -370,36 +430,67 @@ svg{fill:#000;width:34px;height:34px;}
   document.getElementById("sleep").onclick = function(){
     pollEnabled = !pollEnabled;
     sleepBtn.textContent = pollEnabled ? "Sleep" : "Wake";
-    if (!pollEnabled && pollTimer) {
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
-    if (pollEnabled) refresh();
+    if (!pollEnabled) stopPolling();
+    else { refresh(); startPolling(); }
   };
 
-  document.getElementById("refresh").onclick = function(){ refresh(); };
+  document.getElementById("refresh").onclick = function(){
+    refresh();
+  };
+
+  document.getElementById("newCode").onclick = function(){
+    stopPolling();
+    CODE = "";
+    elControls.style.display = "none";
+    elUtility.style.display = "none";
+    elArtWrap.style.display = "none";
+    elTrack.textContent = "—";
+    elArtist.textContent = "";
+    setDeviceIcon("");
+    setPlayingIcon(false);
+
+    pollEnabled = true;
+    sleepBtn.textContent = "Sleep";
+
+    var fresh = randCode();
+    try { localStorage.setItem("kindlifyre_code", fresh); } catch(e) {}
+    qrBox.innerHTML = '<div class="qrFallback">Loading…</div>';
+    renderQrFor(fresh);
+  };
 
   document.getElementById("next").onclick = function(){
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=next", true);
-    xhr.send(null);
+    if (!CODE) return;
+    apiCmd("next");
+    setTimeout(function(){ refresh(); }, 500);
   };
 
   document.getElementById("prev").onclick = function(){
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=prev", true);
-    xhr.send(null);
+    if (!CODE) return;
+    apiCmd("prev");
+    setTimeout(function(){ refresh(); }, 500);
   };
 
   document.getElementById("toggle").onclick = function(){
+    if (!CODE) return;
     apiState(function(s){
       if (!s || !s.ok || !s.active) return;
-      var cmd = s.data.is_playing ? "pause" : "play";
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=" + cmd, true);
-      xhr.send(null);
+      apiCmd((s.data && s.data.is_playing) ? "pause" : "play");
+      setTimeout(function(){ refresh(); }, 400);
     });
   };
+
+  (function init(){
+    setPlayingIcon(false);
+
+    var saved = "";
+    try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
+    var code = /^\d{6}$/.test(saved) ? saved : randCode();
+    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
+
+    loadQrLib(function(){
+      renderQrFor(code);
+    });
+  })();
 
 })();
 </script>
