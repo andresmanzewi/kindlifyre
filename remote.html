@@ -9,8 +9,8 @@
 :root{
   --fg:#000;
   --muted:#333;
-  --border:3px;          /* heavy borders */
-  --softBorder:2px;      /* softer border for cards */
+  --border:3px;
+  --softBorder:2px;
   --radius:16px;
   --pill:999px;
 }
@@ -25,7 +25,6 @@ body{
 
 .wrap{max-width:520px;margin:0 auto;}
 
-/* Shared “card” style */
 .card{
   width:292px;
   margin:0 auto 16px;
@@ -34,16 +33,14 @@ body{
   border-radius:var(--radius);
 }
 
-/* Pairing (QR) card */
+/* QR */
 #qrBox{
   width:260px;
   height:260px;
   margin:8px auto 0;
   display:block;
-  position:relative;
 }
 
-/* QR itself: square edges */
 #qrBox img,#qrBox canvas,#qrBox table{
   border:var(--border) solid var(--fg);
   border-radius:0;
@@ -51,7 +48,6 @@ body{
   height:260px !important;
 }
 
-/* Placeholder / errors */
 .qrFallback{
   width:260px;height:260px;
   border:var(--border) dashed var(--fg);
@@ -66,15 +62,15 @@ body{
   text-align:center;
 }
 
-/* Divider between QR and manual entry */
+/* Divider */
 .divider{
   width:260px;
   margin:16px auto 0;
   display:flex;
   align-items:center;
   gap:10px;
+  font-size:12px;
   color:var(--muted);
-  font-size:13px;
 }
 .divider:before,
 .divider:after{
@@ -82,49 +78,41 @@ body{
   flex:1;
   height:1px;
   background:#000;
-  opacity:0.35;
+  opacity:0.25;
 }
 
-/* Manual entry (secondary) */
+/* Manual entry */
 .codeLine{
   display:flex;
   flex-direction:column;
-  justify-content:center;
   align-items:center;
-  gap:12px;
-  margin-top:12px;
-  opacity:0.88;
+  gap:14px;
+  margin-top:14px;
 }
 
+/* No box for input */
 input{
-  font-size:22px;
-  padding:10px 14px;
-  width:170px;
+  font-size:24px;
   text-align:center;
-  border:var(--border) solid var(--fg);
-  border-radius:12px;
-  background:#fff;
+  border:none;
+  background:transparent;
+  outline:none;
+  width:180px;
+  letter-spacing:4px;
 }
 
+/* Only connect styled */
 .pill{
   font-size:17px;
-  padding:10px 22px;
+  padding:10px 26px;
   border:2px solid var(--fg);
   border-radius:var(--pill);
   background:#fff;
 }
 
-.hint{
-  font-size:13px;
-  color:var(--muted);
-  margin-top:10px;
-  line-height:1.3;
-}
-
-/* Player card */
+/* Player */
 .playerCard{ padding:14px 14px 16px; }
 
-/* Album art */
 .artWrap{
   width:264px;height:264px;
   margin:0 auto 12px;
@@ -136,7 +124,6 @@ input{
 }
 .artWrap img{width:100%;height:100%;object-fit:cover;}
 
-/* Track/artist */
 .track{
   font-size:20px;
   line-height:1.25;
@@ -148,6 +135,7 @@ input{
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
 }
+
 .artist{
   font-size:16px;
   color:var(--muted);
@@ -158,7 +146,6 @@ input{
   white-space:nowrap;
 }
 
-/* Device icon row */
 .deviceType{
   display:flex;
   justify-content:center;
@@ -167,7 +154,6 @@ input{
   margin-bottom:6px;
 }
 
-/* Play state dot */
 .stateDot{
   width:10px;height:10px;
   border:2px solid #000;
@@ -176,7 +162,6 @@ input{
 }
 .stateDot.playing{ background:#000; }
 
-/* Transport controls */
 .controls{
   display:none;
   justify-content:center;
@@ -184,6 +169,7 @@ input{
   gap:18px;
   margin-top:2px;
 }
+
 .roundBtn{
   width:86px;height:86px;
   border-radius:999px;
@@ -191,15 +177,13 @@ input{
   background:#fff;
   display:grid;
   place-items:center;
-  user-select:none;
 }
+
 .roundBtn.center{width:96px;height:96px;}
-.roundBtn:active{transform:scale(0.98);}
 
 svg{fill:#000;width:34px;height:34px;}
 .center svg{width:40px;height:40px;}
 
-/* Utility row */
 .utility{
   display:none;
   justify-content:center;
@@ -208,12 +192,8 @@ svg{fill:#000;width:34px;height:34px;}
   margin-top:14px;
 }
 
-#status{
-  margin-top:12px;
-  font-size:14px;
-  color:var(--muted);
-  min-height:18px;
-}
+#status{ display:none; } /* hide status box completely */
+
 </style>
 </head>
 
@@ -223,18 +203,14 @@ svg{fill:#000;width:34px;height:34px;}
   <!-- Pairing card -->
   <div class="card">
     <div id="qrBox">
-      <div class="qrFallback" id="qrFallback">Loading QR…</div>
+      <div class="qrFallback" id="qrFallback">Loading…</div>
     </div>
 
-    <div class="divider">OR</div>
+    <div class="divider"></div>
 
     <div class="codeLine">
-      <input id="code" inputmode="numeric" maxlength="6" placeholder="Pair code">
+      <input id="code" inputmode="numeric" maxlength="6">
       <button id="connect" class="pill">Connect</button>
-    </div>
-
-    <div class="hint" id="hint">
-      Scan the QR on your phone to pair. Manual code is a fallback.
     </div>
   </div>
 
@@ -257,16 +233,16 @@ svg{fill:#000;width:34px;height:34px;}
     <div class="stateDot" id="stateDot"></div>
 
     <div class="controls" id="controls">
-      <button class="roundBtn" id="prev" aria-label="Previous">
+      <button class="roundBtn" id="prev">
         <svg viewBox="0 0 64 64"><path d="M18 14h6v36h-6zM46 16 26 32l20 16V16z"></path></svg>
       </button>
 
-      <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
+      <button class="roundBtn center" id="toggle">
         <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M24 18v28l24-14-24-14z"></path></svg>
         <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
       </button>
 
-      <button class="roundBtn" id="next" aria-label="Next">
+      <button class="roundBtn" id="next">
         <svg viewBox="0 0 64 64"><path d="M40 14h6v36h-6zM18 16v32l20-16-20-16z"></path></svg>
       </button>
     </div>
@@ -276,8 +252,6 @@ svg{fill:#000;width:34px;height:34px;}
       <button id="sleep" class="pill">Sleep</button>
       <button id="newCode" class="pill">New code</button>
     </div>
-
-    <div id="status"></div>
   </div>
 
 </div>
@@ -289,7 +263,6 @@ svg{fill:#000;width:34px;height:34px;}
 
   var elTrack = document.getElementById("track");
   var elArtist = document.getElementById("artist");
-  var elStatus = document.getElementById("status");
   var elControls = document.getElementById("controls");
   var elUtility = document.getElementById("utility");
   var elArtWrap = document.getElementById("artWrap");
@@ -299,21 +272,16 @@ svg{fill:#000;width:34px;height:34px;}
   var iconPause = document.getElementById("iconPause");
   var iconPhone = document.getElementById("iconPhone");
   var iconComputer = document.getElementById("iconComputer");
-
   var stateDot = document.getElementById("stateDot");
 
   var qrBox = document.getElementById("qrBox");
-  var qrFallback = document.getElementById("qrFallback");
   var inputCode = document.getElementById("code");
-  var hint = document.getElementById("hint");
 
   var sleepBtn = document.getElementById("sleep");
 
   var CODE = "";
   var pollTimer = null;
   var pollEnabled = true;
-
-  function setStatus(t){ elStatus.textContent = t || ""; }
 
   function randCode(){
     return String(Math.floor(100000 + Math.random()*900000));
@@ -322,9 +290,7 @@ svg{fill:#000;width:34px;height:34px;}
   function setPlayingIcon(isPlaying){
     iconPlay.style.display = isPlaying ? "none" : "block";
     iconPause.style.display = isPlaying ? "block" : "none";
-    if (stateDot) {
-      stateDot.className = "stateDot" + (isPlaying ? " playing" : "");
-    }
+    stateDot.className = "stateDot" + (isPlaying ? " playing" : "");
   }
 
   function setDeviceIcon(type){
@@ -332,46 +298,16 @@ svg{fill:#000;width:34px;height:34px;}
     iconComputer.style.display = "none";
     if (!type) return;
     var t = String(type).toLowerCase();
-    if (t.indexOf("phone") !== -1 || t.indexOf("smartphone") !== -1) iconPhone.style.display = "block";
+    if (t.indexOf("phone") !== -1) iconPhone.style.display = "block";
     else iconComputer.style.display = "block";
   }
 
   function chooseArt(item){
-    if (!item || !item.album || !item.album.images || !item.album.images.length) return "";
+    if (!item || !item.album || !item.album.images) return "";
     var imgs = item.album.images;
+    if (!imgs.length) return "";
     var mid = imgs[Math.floor(imgs.length/2)];
-    return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
-  }
-
-  function loadQrLib(cb){
-    var s = document.createElement("script");
-    s.src = "./qrcode.min.js";
-    s.onload = function(){ cb(true); };
-    s.onerror = function(){ cb(false); };
-    document.body.appendChild(s);
-
-    setTimeout(function(){
-      if (typeof window.QRCode === "undefined") cb(false);
-    }, 3000);
-  }
-
-  function renderQrFor(code){
-    inputCode.value = code;
-
-    if (typeof window.QRCode === "undefined") {
-      qrFallback.textContent =
-        "QR library not loaded.\n\nConfirm:\n/kindlifyre/qrcode.min.js\nexists.\n\nManual code still works.";
-      hint.textContent = "Open pair.html on your phone and type the code manually.";
-      return;
-    }
-
-    qrBox.innerHTML = "";
-    new window.QRCode(qrBox, {
-      text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
-      width: 260,
-      height: 260,
-      correctLevel: window.QRCode.CorrectLevel.M
-    });
+    return mid && mid.url ? mid.url : imgs[0].url;
   }
 
   function apiState(done){
@@ -380,70 +316,28 @@ svg{fill:#000;width:34px;height:34px;}
     xhr.onreadystatechange = function(){
       if (xhr.readyState !== 4) return;
       try { done(JSON.parse(xhr.responseText)); }
-      catch(e){ done({ ok:false, error:"bad json" }); }
+      catch(e){ done({ ok:false }); }
     };
     xhr.send(null);
-  }
-
-  function apiCmd(name, done){
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + encodeURIComponent(name), true);
-    xhr.onreadystatechange = function(){
-      if (xhr.readyState !== 4) return;
-      try { done(JSON.parse(xhr.responseText)); }
-      catch(e){ done({ ok:false, error:"bad json" }); }
-    };
-    xhr.send(null);
-  }
-
-  function stopPolling(){
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  }
-
-  function startPolling(){
-    stopPolling();
-    if (!pollEnabled) return;
-    pollTimer = setInterval(function(){ refresh(); }, 12000);
-  }
-
-  function setSleepMode(on){
-    pollEnabled = !on;
-    if (sleepBtn) sleepBtn.textContent = on ? "Wake" : "Sleep";
-    if (on) stopPolling();
-    else startPolling();
   }
 
   function refresh(){
     apiState(function(s){
-      if (!s || !s.ok) { setStatus("Error: " + (s && s.error ? s.error : "state")); return; }
+      if (!s || !s.ok || !s.active) return;
 
-      if (!s.active) {
-        elTrack.textContent = "No active device";
-        elArtist.textContent = "Start playback on phone";
-        elArtWrap.style.display = "none";
-        setDeviceIcon("");
-        setPlayingIcon(false);
-
-        /* Reduce flicker: stop polling when inactive */
-        stopPolling();
-        return;
-      }
-
-      var pb = s.data || {};
-      var item = pb.item || null;
+      var pb = s.data;
+      var item = pb.item;
 
       elTrack.textContent = item && item.name ? item.name : "Unknown";
 
-      if (item && item.artists && item.artists.length) {
+      if (item && item.artists) {
         var names = [];
         for (var i=0;i<item.artists.length;i++) names.push(item.artists[i].name);
         elArtist.textContent = names.join(", ");
-      } else {
-        elArtist.textContent = "";
       }
 
-      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
-      setPlayingIcon(!!pb.is_playing);
+      setDeviceIcon(pb.device ? pb.device.type : "");
+      setPlayingIcon(pb.is_playing);
 
       var art = chooseArt(item);
       if (art) {
@@ -452,89 +346,60 @@ svg{fill:#000;width:34px;height:34px;}
           elArt.src = art;
         }
         elArtWrap.style.display = "block";
-      } else {
-        elArtWrap.style.display = "none";
       }
 
-      setStatus("");
-
-      /* If active and polling enabled but timer was stopped, restart */
-      if (pollEnabled && !pollTimer) startPolling();
+      if (!pollTimer && pollEnabled) {
+        pollTimer = setInterval(refresh, 12000);
+      }
     });
   }
 
   function connectWithCode(c){
     CODE = c;
-    try { localStorage.setItem("kindlifyre_code", CODE); } catch(e) {}
     elControls.style.display = "flex";
     elUtility.style.display = "flex";
     refresh();
-    startPolling();
   }
 
   document.getElementById("connect").onclick = function(){
     var c = (inputCode.value || "").replace(/\s+/g,"");
-    if (!/^\d{6}$/.test(c)) { setStatus("Enter 6 digits."); return; }
+    if (!/^\d{6}$/.test(c)) return;
     connectWithCode(c);
   };
 
-  document.getElementById("refresh").onclick = function(){
-    if (!pollEnabled) setStatus("Sleep is on. Tap Wake to resume polling.");
-    refresh();
-  };
-
   document.getElementById("sleep").onclick = function(){
-    setSleepMode(pollEnabled); /* toggle */
-    setStatus("");
+    pollEnabled = !pollEnabled;
+    sleepBtn.textContent = pollEnabled ? "Sleep" : "Wake";
+    if (!pollEnabled && pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+    if (pollEnabled) refresh();
   };
 
-  document.getElementById("newCode").onclick = function(){
-    stopPolling();
-    elControls.style.display = "none";
-    elUtility.style.display = "none";
-    elArtWrap.style.display = "none";
-    elTrack.textContent = "—";
-    elArtist.textContent = "";
-    setDeviceIcon("");
-    setPlayingIcon(false);
-
-    setSleepMode(false); /* ensure polling enabled for next connect */
-
-    var fresh = randCode();
-    try { localStorage.setItem("kindlifyre_code", fresh); } catch(e) {}
-    qrBox.innerHTML = '<div class="qrFallback">Loading QR…</div>';
-    renderQrFor(fresh);
-    setStatus("New code generated.");
-  };
+  document.getElementById("refresh").onclick = function(){ refresh(); };
 
   document.getElementById("next").onclick = function(){
-    apiCmd("next", function(){ setTimeout(function(){ refresh(); }, 500); });
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=next", true);
+    xhr.send(null);
   };
+
   document.getElementById("prev").onclick = function(){
-    apiCmd("prev", function(){ setTimeout(function(){ refresh(); }, 500); });
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=prev", true);
+    xhr.send(null);
   };
+
   document.getElementById("toggle").onclick = function(){
     apiState(function(s){
-      if (!s || !s.ok || !s.active) { setStatus("Start playback first."); return; }
-      apiCmd((s.data && s.data.is_playing) ? "pause" : "play", function(){
-        setTimeout(function(){ refresh(); }, 400);
-      });
+      if (!s || !s.ok || !s.active) return;
+      var cmd = s.data.is_playing ? "pause" : "play";
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=" + cmd, true);
+      xhr.send(null);
     });
   };
-
-  (function init(){
-    setStatus("");          /* no duplicate instructions outside */
-    setPlayingIcon(false);
-    setSleepMode(false);    /* default awake */
-
-    var saved = "";
-    try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
-
-    var code = /^\d{6}$/.test(saved) ? saved : randCode();
-    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
-
-    loadQrLib(function(){ renderQrFor(code); });
-  })();
 
 })();
 </script>
