@@ -67,13 +67,13 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
+/* Only the icon shows; tap icon to open picker */
 .deviceType{
   min-height:28px;
   margin:6px 0 8px;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:10px;
   user-select:none;
   -webkit-user-select:none;
   cursor:pointer;
@@ -122,6 +122,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   border-radius:999px;
   background:#fff;
 }
+
 .devRow{
   padding:10px 10px;
   border:1px solid rgba(0,0,0,0.25);
@@ -130,7 +131,9 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   display:flex;
   align-items:center;
   justify-content:space-between;
+  gap:12px;
 }
+.devLeft{ min-width:0; }
 .devName{
   font-size:16px;
   overflow:hidden;
@@ -138,14 +141,30 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   white-space:nowrap;
   max-width:260px;
 }
-.devMeta{
+.devType{
   font-size:12px;
   letter-spacing:1px;
-  opacity:0.7;
-  margin-left:10px;
-  white-space:nowrap;
+  opacity:0.65;
+  margin-top:2px;
 }
-.devActive{ border-color:#000; }
+
+/* dot / check indicator */
+.indicator{
+  width:22px;height:22px;
+  border:2px solid #000;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  flex:0 0 auto;
+}
+.indicator svg{
+  width:14px;height:14px;
+  display:none;
+  fill:#000;
+}
+.indicator.active svg{ display:block; }
 </style>
 </head>
 
@@ -166,7 +185,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     <div class="track" id="track">—</div>
     <div class="artist" id="artist"></div>
 
-    <!-- Tap this area to open device picker -->
+    <!-- Tap icon to open device picker -->
     <div class="deviceType" id="deviceType" aria-label="Device">
       <svg id="iconPhone" viewBox="0 0 64 64" style="display:none;width:22px;height:22px;">
         <path d="M22 6h20a6 6 0 0 1 6 6v40a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6zm0 8v36h20V14H22z"></path>
@@ -174,7 +193,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
       <svg id="iconComputer" viewBox="0 0 64 64" style="display:none;width:24px;height:24px;">
         <path d="M8 12h48a4 4 0 0 1 4 4v26a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4zm0 6v22h48V18H8zm18 30h12l2 6H24l2-6z"></path>
       </svg>
-      <span id="deviceChevron" style="font-size:14px;letter-spacing:2px;opacity:0.6;">DEV</span>
     </div>
 
     <div class="picker" id="picker">
@@ -346,7 +364,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   function setConnected(){
     if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
 
-    // hide pairing, show player
     pairCard.style.display = "none";
     playerCard.style.display = "block";
 
@@ -373,7 +390,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     stopPolling();
     if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
 
-    // show pairing, hide player
     pairCard.style.display = "block";
     playerCard.style.display = "none";
 
@@ -439,9 +455,10 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     resetToPairing(code);
   };
 
-  // Device picker open/close
+  // Picker close
   pickerClose.onclick = function(){ picker.style.display = "none"; };
 
+  // Tap device icon -> open picker
   elDeviceType.onclick = function(){
     if (!CODE) return;
 
@@ -455,31 +472,48 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 
     apiDevices(function(resp){
       if (!resp || !resp.ok) {
-        pickerList.innerHTML = '<div class="devRow"><div class="devName">No devices</div><div class="devMeta">ERR</div></div>';
+        pickerList.innerHTML =
+          '<div class="devRow"><div class="devLeft"><div class="devName">No devices</div><div class="devType">ERROR</div></div>' +
+          '<div class="indicator"></div></div>';
         return;
       }
 
       var devices = resp.devices || [];
       if (!devices.length) {
-        pickerList.innerHTML = '<div class="devRow"><div class="devName">No devices</div><div class="devMeta">OPEN SPOTIFY</div></div>';
+        pickerList.innerHTML =
+          '<div class="devRow"><div class="devLeft"><div class="devName">No devices</div><div class="devType">OPEN SPOTIFY</div></div>' +
+          '<div class="indicator"></div></div>';
         return;
       }
 
       for (var i=0;i<devices.length;i++){
         (function(d){
           var row = document.createElement("div");
-          row.className = "devRow" + (d.is_active ? " devActive" : "");
+          row.className = "devRow";
 
           var left = document.createElement("div");
-          left.className = "devName";
-          left.textContent = d.name || "Device";
+          left.className = "devLeft";
 
-          var right = document.createElement("div");
-          right.className = "devMeta";
-          right.textContent = (d.type || "").toUpperCase() + (d.is_active ? " • ON" : "");
+          var nm = document.createElement("div");
+          nm.className = "devName";
+          nm.textContent = d.name || "Device";
+
+          var tp = document.createElement("div");
+          tp.className = "devType";
+          tp.textContent = (d.type || "").toUpperCase();
+
+          left.appendChild(nm);
+          left.appendChild(tp);
+
+          var ind = document.createElement("div");
+          ind.className = "indicator" + (d.is_active ? " active" : "");
+          ind.innerHTML =
+            '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+            '<path d="M25 44L12 31l5-5 8 8 22-22 5 5-27 27z"></path>' +
+            '</svg>';
 
           row.appendChild(left);
-          row.appendChild(right);
+          row.appendChild(ind);
 
           row.onclick = function(){
             apiTransfer(d.id, true, function(){
@@ -497,7 +531,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 
   // INIT
   (function init(){
-    // Hide player card until connected
     playerCard.style.display = "none";
     setPlayingIcon(false);
 
