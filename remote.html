@@ -40,6 +40,7 @@ body{font-family:sans-serif;background:#fff;color:#000;margin:18px 10px;text-ali
   color:var(--muted);
   padding:10px;
   box-sizing:border-box;
+  white-space:pre-line;
 }
 
 .codeLine{
@@ -63,9 +64,7 @@ input{
 
 .deviceType{display:flex;justify-content:center;align-items:center;min-height:22px;margin-bottom:12px;}
 
-.controls{
-  display:none;justify-content:center;align-items:center;gap:18px;margin-top:10px;
-}
+.controls{display:none;justify-content:center;align-items:center;gap:18px;margin-top:10px;}
 .roundBtn{
   width:86px;height:86px;border-radius:999px;border:var(--border) solid var(--fg);
   background:#fff;display:grid;place-items:center;user-select:none;
@@ -75,9 +74,7 @@ input{
 svg{fill:#000;width:34px;height:34px;}
 .center svg{width:40px;height:40px;}
 
-.utility{
-  display:none;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px;
-}
+.utility{display:none;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px;}
 #status{margin-top:12px;font-size:14px;color:var(--muted);min-height:18px;}
 </style>
 </head>
@@ -95,7 +92,9 @@ svg{fill:#000;width:34px;height:34px;}
       <button id="connect" class="pill">Connect</button>
     </div>
 
-    <div class="hint">Scan QR with your phone to pair, or enter the code manually.</div>
+    <div class="hint" id="hint">
+      Scan QR with your phone to pair, or enter the code manually.
+    </div>
   </div>
 
   <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
@@ -113,16 +112,16 @@ svg{fill:#000;width:34px;height:34px;}
   </div>
 
   <div class="controls" id="controls">
-    <button class="roundBtn" id="prev">
+    <button class="roundBtn" id="prev" aria-label="Previous">
       <svg viewBox="0 0 64 64"><path d="M18 14h6v36h-6zM46 16 26 32l20 16V16z"></path></svg>
     </button>
 
-    <button class="roundBtn center" id="toggle">
+    <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
       <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M24 18v28l24-14-24-14z"></path></svg>
       <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
     </button>
 
-    <button class="roundBtn" id="next">
+    <button class="roundBtn" id="next" aria-label="Next">
       <svg viewBox="0 0 64 64"><path d="M40 14h6v36h-6zM18 16v32l20-16-20-16z"></path></svg>
     </button>
   </div>
@@ -134,9 +133,6 @@ svg{fill:#000;width:34px;height:34px;}
 
   <div id="status"></div>
 </div>
-
-<!-- Must exist at /kindlifyre/qrcode.min.js -->
-<script src="./qrcode.min.js"></script>
 
 <script>
 const WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
@@ -158,42 +154,13 @@ const iconComputer = document.getElementById("iconComputer");
 const qrBox = document.getElementById("qrBox");
 const qrFallback = document.getElementById("qrFallback");
 const inputCode = document.getElementById("code");
+const hint = document.getElementById("hint");
 
 let CODE = "";
 let pollTimer = null;
 
 function setStatus(t){ elStatus.textContent = t || ""; }
-
 function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
-
-function setQrForCode(code){
-  inputCode.value = code;
-
-  // If QRCode library isn't available, tell the user clearly (no silent failure)
-  if (typeof QRCode === "undefined") {
-    qrFallback.textContent = "QR library not loaded.\nCheck qrcode.min.js exists.";
-    return;
-  }
-
-  qrFallback.style.display = "none";
-  qrBox.innerHTML = "";
-
-  new QRCode(qrBox, {
-    text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
-    width: 240,
-    height: 240,
-    correctLevel: QRCode.CorrectLevel.M
-  });
-}
-
-async function apiState(){
-  const r = await fetch(WORKER_BASE + "/state?code=" + encodeURIComponent(CODE));
-  return r.json();
-}
-async function apiCmd(name){
-  const r = await fetch(WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + name, { method:"POST" });
-  return r.json();
-}
 
 function setPlayingIcon(p){
   iconPlay.style.display = p ? "none" : "block";
@@ -207,15 +174,56 @@ function setDeviceIcon(type){
   if(t.includes("phone")||t.includes("smartphone")) iconPhone.style.display="block";
   else iconComputer.style.display="block";
 }
-
 function chooseArt(item){
   const imgs=item?.album?.images;
   if(!imgs||!imgs.length) return "";
   return imgs[Math.floor(imgs.length/2)]?.url || imgs[0]?.url || "";
 }
 
+function loadQrLib(cb){
+  // Load from same origin to avoid Kindle cross-domain issues
+  var s = document.createElement("script");
+  s.src = "./qrcode.min.js";
+  s.onload = function(){ cb(true); };
+  s.onerror = function(){ cb(false); };
+  document.body.appendChild(s);
+
+  // Timeout (Kindle sometimes neither onload nor onerror)
+  setTimeout(function(){
+    if (typeof QRCode === "undefined") cb(false);
+  }, 2500);
+}
+
+function renderQrFor(code){
+  inputCode.value = code;
+
+  if (typeof QRCode === "undefined") {
+    qrFallback.textContent =
+      "QR failed to load.\n\nCheck:\n/kindlifyre/qrcode.min.js\nexists.\n\nManual code still works.";
+    hint.textContent = "Type the code manually on your phone pairing page.";
+    return;
+  }
+
+  qrBox.innerHTML = "";
+  new QRCode(qrBox,{
+    text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
+    width:240,
+    height:240,
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+async function apiState(){
+  const r = await fetch(WORKER_BASE + "/state?code=" + encodeURIComponent(CODE));
+  return r.json();
+}
+async function apiCmd(name){
+  const r = await fetch(WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + name, { method:"POST" });
+  return r.json();
+}
+
 async function refresh(){
-  const s=await apiState();
+  const s = await apiState();
   if(!s.ok || !s.active){
     elTrack.textContent="No active device";
     elArtist.textContent="Start playback on phone";
@@ -223,50 +231,50 @@ async function refresh(){
     setPlayingIcon(false);
     return;
   }
-  const pb=s.data;
-  elTrack.textContent=pb.item?.name||"Unknown";
-  elArtist.textContent=pb.item?.artists?.map(a=>a.name).join(", ")||"";
-  setDeviceIcon(pb.device?.type||"");
+  const pb = s.data;
+  elTrack.textContent = pb.item?.name || "Unknown";
+  elArtist.textContent = pb.item?.artists?.map(a=>a.name).join(", ") || "";
+  setDeviceIcon(pb.device?.type || "");
   setPlayingIcon(!!pb.is_playing);
 
-  const art=chooseArt(pb.item);
-  if(art){
-    if(elArt.getAttribute("data-src")!==art){
-      elArt.setAttribute("data-src",art);
-      elArt.src=art;
+  const art = chooseArt(pb.item);
+  if (art) {
+    if (elArt.getAttribute("data-src") !== art) {
+      elArt.setAttribute("data-src", art);
+      elArt.src = art;
     }
     elArtWrap.style.display="block";
   }
 }
 
 function connectWithCode(c){
-  CODE=c;
+  CODE = c;
   localStorage.setItem("kindlifyre_code", CODE);
   elControls.style.display="flex";
   elUtility.style.display="flex";
   refresh();
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer=setInterval(refresh, 12000);
+  pollTimer = setInterval(refresh, 12000);
 }
 
-document.getElementById("connect").onclick=function(){
-  const c=inputCode.value.trim();
+document.getElementById("connect").onclick = function(){
+  const c = inputCode.value.trim();
   if(!/^\d{6}$/.test(c)){ setStatus("Enter your 6-digit code."); return; }
   connectWithCode(c);
 };
 
-document.getElementById("refresh").onclick=refresh;
+document.getElementById("refresh").onclick = refresh;
 
-document.getElementById("newCode").onclick=function(){
+document.getElementById("newCode").onclick = function(){
   if (pollTimer) clearInterval(pollTimer);
   elControls.style.display="none";
   elUtility.style.display="none";
   elArtWrap.style.display="none";
-  const fresh=randCode();
+  const fresh = randCode();
   localStorage.setItem("kindlifyre_code", fresh);
-  qrBox.innerHTML = '<div class="qrFallback" id="qrFallback2">Loading QR…</div>';
-  setQrForCode(fresh);
-  setStatus("New code generated. Scan again to pair.");
+  qrBox.innerHTML = '<div class="qrFallback" id="qrFallback">Loading QR…</div>';
+  renderQrFor(fresh);
+  setStatus("New code generated.");
 };
 
 document.getElementById("next").onclick = async()=>{ await apiCmd("next"); await new Promise(r=>setTimeout(r,450)); await refresh(); };
@@ -283,10 +291,15 @@ document.getElementById("toggle").onclick = async()=>{
   setStatus("Scan QR to pair, then Connect.");
   setPlayingIcon(false);
 
-  const saved=localStorage.getItem("kindlifyre_code");
-  const code=/^\d{6}$/.test(saved||"") ? saved : randCode();
+  const saved = localStorage.getItem("kindlifyre_code");
+  const code = (/^\d{6}$/.test(saved||"")) ? saved : randCode();
   localStorage.setItem("kindlifyre_code", code);
-  setQrForCode(code);
+
+  // Load QR lib asynchronously, then render
+  loadQrLib(function(ok){
+    // If it loaded, QRCode is defined. If not, we render fallback message.
+    renderQrFor(code);
+  });
 })();
 </script>
 
