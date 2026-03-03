@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kindle Spotify Remote</title>
 <style>
@@ -133,11 +133,12 @@
   }
 </style>
 </head>
+  <script src="./qrcode.min.js"></script>
 <body>
 <div class="wrap">
 
   <div class="qrArea">
-    <img id="qrImg" alt="QR">
+    <div id="qrBox"></div>
     <div class="codeLine">
       <input id="code" inputmode="numeric" maxlength="6" placeholder="Pair code">
       <button id="connect" class="pill">Connect</button>
@@ -231,10 +232,22 @@ function randCode(){
 }
 
 function setQrForCode(code){
-  const pairUrl = `${PAIR_URL_BASE}?code=${encodeURIComponent(code)}`;
-  const qrApi = "https://api.qrserver.com/v1/create-qr-code/";
-  qrImg.src = qrApi + "?size=240x240&data=" + encodeURIComponent(pairUrl);
+  var pairUrl = PAIR_URL_BASE + "?code=" + encodeURIComponent(code);
+
+  // Clear previous QR
+  var box = document.getElementById("qrBox");
+  box.innerHTML = "";
+
+  // Generate QR (no external requests)
+  new QRCode(box, {
+    text: pairUrl,
+    width: 240,
+    height: 240,
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
   inputCode.value = code;
+}
 }
 
 async function apiState(){
