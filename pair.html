@@ -48,8 +48,9 @@ button{
 
 .status{
   margin-top:28px;
-  font-size:22px;
+  font-size:20px;
   letter-spacing:2px;
+  line-height:1.4;
 }
 </style>
 </head>
@@ -76,6 +77,10 @@ button{
   var loginBtn = document.getElementById("loginBtn");
 
   function setStatus(t){ statusEl.textContent = t || ""; }
+
+  function randCode(){
+    return String(Math.floor(100000 + Math.random()*900000));
+  }
 
   function randStr(len){
     var p="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -159,9 +164,22 @@ button{
 
       if(xhr.status !== 200){ setStatus("PAIR FAILED"); return; }
 
+      // Step 1: Show paired confirmation
       codeDisplay.textContent = "PAIRED ✓";
       loginBtn.style.display = "none";
       setStatus("");
+
+      // Step 2: After brief pause, show return message
+      setTimeout(function(){
+        codeDisplay.textContent = "";
+        setStatus("RETURN TO YOUR KINDLE");
+
+        // Step 3: After additional delay, redirect to clean return screen
+        setTimeout(function(){
+          showReturnScreen();
+        }, 1800);
+
+      }, 1200);
     };
 
     xhr.send(JSON.stringify({
@@ -171,18 +189,30 @@ button{
     }));
   }
 
+  function showReturnScreen(){
+    document.body.innerHTML =
+      '<div class="wrap">' +
+        '<div class="status" style="font-size:22px;letter-spacing:2px;">' +
+          '✓ CONNECTED<br><br>' +
+          'YOU MAY CLOSE THIS PAGE' +
+        '</div>' +
+      '</div>';
+  }
+
   loginBtn.onclick = startLogin;
 
   (function init(){
     var params = new URLSearchParams(window.location.search);
 
     var p = (params.get("p") || "").trim();
+
     if (/^\d{6}$/.test(p)) {
       localStorage.setItem("pair_code", p);
       codeDisplay.textContent = p;
     } else {
-      var saved = localStorage.getItem("pair_code") || "";
-      codeDisplay.textContent = (/^\d{6}$/.test(saved)) ? saved : "------";
+      var fresh = randCode();
+      localStorage.setItem("pair_code", fresh);
+      codeDisplay.textContent = fresh;
     }
 
     var authCode = params.get("code");
