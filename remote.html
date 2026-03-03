@@ -1,4 +1,3 @@
-<!-- remote.html (full file) -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -146,9 +145,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   margin-left:10px;
   white-space:nowrap;
 }
-.devActive{
-  border-color:#000;
-}
+.devActive{ border-color:#000; }
 </style>
 </head>
 
@@ -162,7 +159,8 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     <div class="newCode" id="newCode">NEW CODE</div>
   </div>
 
-  <div class="card">
+  <!-- Player card is hidden until connected -->
+  <div class="card" id="playerCard">
     <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
 
     <div class="track" id="track">—</div>
@@ -211,6 +209,8 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   var PAIR_URL_BASE = "https://andresmanzewi.github.io/kindlifyre/pair.html";
 
   var pairCard = document.getElementById("pairCard");
+  var playerCard = document.getElementById("playerCard");
+
   var qrBox = document.getElementById("qrBox");
   var codeText = document.getElementById("codeText");
   var newCodeBtn = document.getElementById("newCode");
@@ -236,7 +236,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   var pollTimer = null;
   var pairWatchTimer = null;
   var currentPairCode = "";
-  var lastKnownDeviceId = "";
 
   function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
 
@@ -320,7 +319,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onreadystatechange = function(){
       if (xhr.readyState !== 4) return;
-      try { done({ status: xhr.status, body: xhr.responseText }); } catch(e){ done({ status: xhr.status, body: "" }); }
+      done({ status: xhr.status, body: xhr.responseText });
     };
     xhr.send(JSON.stringify({ code: CODE, device_id: device_id, play: play }));
   }
@@ -333,7 +332,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     stopPolling();
     if (!CODE) return;
 
-    // Kindle-safe: 2s for first ~12s, then 6s (device switching feels faster)
+    // Kindle-safe: 2s for first ~12s, then 6s steady
     var fastUntil = Date.now() + 12000;
     pollTimer = setInterval(function(){
       refresh();
@@ -346,7 +345,11 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
 
   function setConnected(){
     if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
+
+    // hide pairing, show player
     pairCard.style.display = "none";
+    playerCard.style.display = "block";
+
     elControls.style.display = "flex";
     refresh();
     startPolling();
@@ -370,7 +373,10 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     stopPolling();
     if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
 
+    // show pairing, hide player
     pairCard.style.display = "block";
+    playerCard.style.display = "none";
+
     elControls.style.display = "none";
     elArtWrap.style.display = "none";
     picker.style.display = "none";
@@ -378,7 +384,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     setPlayingIcon(false);
     iconPhone.style.display = "none";
     iconComputer.style.display = "none";
-    lastKnownDeviceId = "";
 
     renderQrFor(newCode);
     startAutoConnectWatch(newCode);
@@ -394,9 +399,7 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
       var pb = s.data;
 
       setPlayingIcon(!!pb.is_playing);
-
-      if (pb.device && pb.device.type) setDeviceIcon(pb.device.type);
-      if (pb.device && pb.device.id) lastKnownDeviceId = pb.device.id;
+      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
 
       if (pb.item && pb.item.name) elTrack.textContent = pb.item.name;
 
@@ -442,7 +445,6 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
   elDeviceType.onclick = function(){
     if (!CODE) return;
 
-    // toggle
     if (picker.style.display === "block") {
       picker.style.display = "none";
       return;
@@ -463,11 +465,11 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
         return;
       }
 
-      // render list
       for (var i=0;i<devices.length;i++){
         (function(d){
           var row = document.createElement("div");
           row.className = "devRow" + (d.is_active ? " devActive" : "");
+
           var left = document.createElement("div");
           left.className = "devName";
           left.textContent = d.name || "Device";
@@ -480,10 +482,8 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
           row.appendChild(right);
 
           row.onclick = function(){
-            // Transfer and keep playing
             apiTransfer(d.id, true, function(){
               picker.style.display = "none";
-              // refresh a couple times because Connect can lag
               setTimeout(refresh, 700);
               setTimeout(refresh, 2000);
             });
@@ -495,8 +495,10 @@ body{ font-family:sans-serif; background:#fff; color:#000; margin:18px 10px; tex
     });
   };
 
-  // INIT: stable pairing code
+  // INIT
   (function init(){
+    // Hide player card until connected
+    playerCard.style.display = "none";
     setPlayingIcon(false);
 
     var saved = "";
