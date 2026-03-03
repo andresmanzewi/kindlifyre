@@ -13,15 +13,7 @@
   --radius:16px;
   --pill:999px;
 }
-
-body{
-  font-family:sans-serif;
-  background:#fff;
-  color:#000;
-  margin:18px 10px;
-  text-align:center;
-}
-
+body{font-family:sans-serif;background:#fff;color:#000;margin:18px 10px;text-align:center;}
 .wrap{max-width:520px;margin:0 auto;}
 
 .qrArea{
@@ -31,169 +23,82 @@ body{
   border:var(--border) solid var(--fg);
   border-radius:var(--radius);
 }
-
-#qrBox{
-  width:240px;
-  height:240px;
-  margin:0 auto;
-}
-
-#qrBox img,
-#qrBox canvas,
-#qrBox table{
+#qrBox{width:240px;height:240px;margin:0 auto;display:grid;place-items:center;}
+#qrBox img,#qrBox canvas,#qrBox table{
   border:var(--border) solid var(--fg);
   border-radius:14px;
   width:240px !important;
   height:240px !important;
 }
-
-.codeLine{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:10px;
-  margin-top:10px;
-  flex-wrap:wrap;
-}
-
-input{
-  font-size:22px;
-  padding:10px 14px;
-  width:170px;
-  text-align:center;
-  border:var(--border) solid var(--fg);
-  border-radius:12px;
-  background:#fff;
-}
-
-.pill{
-  font-size:18px;
-  padding:10px 16px;
-  border:var(--border) solid var(--fg);
-  border-radius:var(--pill);
-  background:#fff;
-}
-
-.hint{
-  font-size:14px;
-  color:var(--muted);
-  margin-top:8px;
-}
-
-.artWrap{
-  width:280px;
-  height:280px;
-  margin:16px auto 12px;
-  border:var(--border) solid var(--fg);
+.qrFallback{
+  width:240px;height:240px;
+  border:var(--border) dashed var(--fg);
   border-radius:14px;
-  overflow:hidden;
-  display:none;
-  background:#fff;
-}
-
-.artWrap img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-
-.track{
-  font-size:20px;
-  line-height:1.25;
-  margin:10px 0 6px;
-  min-height:52px;
-}
-
-.artist{
-  font-size:16px;
-  color:var(--muted);
-  margin-bottom:6px;
-  min-height:20px;
-}
-
-.deviceType{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:22px;
-  margin-bottom:12px;
-}
-
-.controls{
-  display:none;
-  justify-content:center;
-  align-items:center;
-  gap:18px;
-  margin-top:10px;
-}
-
-.roundBtn{
-  width:86px;
-  height:86px;
-  border-radius:999px;
-  border:var(--border) solid var(--fg);
-  background:#fff;
   display:grid;
   place-items:center;
-  user-select:none;
-}
-
-.roundBtn.center{
-  width:96px;
-  height:96px;
-}
-
-.roundBtn:active{
-  transform:scale(0.98);
-}
-
-svg{
-  fill:#000;
-  width:34px;
-  height:34px;
-}
-
-.center svg{
-  width:40px;
-  height:40px;
-}
-
-.utility{
-  display:none;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:14px;
-}
-
-#status{
-  margin-top:12px;
   font-size:14px;
   color:var(--muted);
-  min-height:18px;
+  padding:10px;
+  box-sizing:border-box;
 }
-</style>
 
+.codeLine{
+  display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;
+}
+input{
+  font-size:22px;padding:10px 14px;width:170px;text-align:center;
+  border:var(--border) solid var(--fg);border-radius:12px;background:#fff;
+}
+.pill{font-size:18px;padding:10px 16px;border:var(--border) solid var(--fg);border-radius:var(--pill);background:#fff;}
+.hint{font-size:14px;color:var(--muted);margin-top:8px;}
+
+.artWrap{
+  width:280px;height:280px;margin:16px auto 12px;border:var(--border) solid var(--fg);
+  border-radius:14px;overflow:hidden;display:none;background:#fff;
+}
+.artWrap img{width:100%;height:100%;object-fit:cover;}
+
+.track{font-size:20px;line-height:1.25;margin:10px 0 6px;min-height:52px;}
+.artist{font-size:16px;color:var(--muted);margin-bottom:6px;min-height:20px;}
+
+.deviceType{display:flex;justify-content:center;align-items:center;min-height:22px;margin-bottom:12px;}
+
+.controls{
+  display:none;justify-content:center;align-items:center;gap:18px;margin-top:10px;
+}
+.roundBtn{
+  width:86px;height:86px;border-radius:999px;border:var(--border) solid var(--fg);
+  background:#fff;display:grid;place-items:center;user-select:none;
+}
+.roundBtn.center{width:96px;height:96px;}
+.roundBtn:active{transform:scale(0.98);}
+svg{fill:#000;width:34px;height:34px;}
+.center svg{width:40px;height:40px;}
+
+.utility{
+  display:none;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px;
+}
+#status{margin-top:12px;font-size:14px;color:var(--muted);min-height:18px;}
+</style>
 </head>
+
 <body>
 <div class="wrap">
 
   <div class="qrArea">
-    <div id="qrBox"></div>
+    <div id="qrBox">
+      <div class="qrFallback" id="qrFallback">Loading QR…</div>
+    </div>
 
     <div class="codeLine">
       <input id="code" inputmode="numeric" maxlength="6" placeholder="Pair code">
       <button id="connect" class="pill">Connect</button>
     </div>
 
-    <div class="hint">
-      Scan QR with your phone to pair, or enter the code manually.
-    </div>
+    <div class="hint">Scan QR with your phone to pair, or enter the code manually.</div>
   </div>
 
-  <div class="artWrap" id="artWrap">
-    <img id="art" alt="">
-  </div>
+  <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
 
   <div class="track" id="track">—</div>
   <div class="artist" id="artist"></div>
@@ -213,12 +118,8 @@ svg{
     </button>
 
     <button class="roundBtn center" id="toggle">
-      <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;">
-        <path d="M24 18v28l24-14-24-14z"></path>
-      </svg>
-      <svg id="iconPause" viewBox="0 0 64 64" style="display:none;">
-        <path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path>
-      </svg>
+      <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M24 18v28l24-14-24-14z"></path></svg>
+      <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
     </button>
 
     <button class="roundBtn" id="next">
@@ -232,9 +133,9 @@ svg{
   </div>
 
   <div id="status"></div>
-
 </div>
 
+<!-- Must exist at /kindlifyre/qrcode.min.js -->
 <script src="./qrcode.min.js"></script>
 
 <script>
@@ -255,33 +156,42 @@ const iconPhone = document.getElementById("iconPhone");
 const iconComputer = document.getElementById("iconComputer");
 
 const qrBox = document.getElementById("qrBox");
+const qrFallback = document.getElementById("qrFallback");
 const inputCode = document.getElementById("code");
 
 let CODE = "";
 let pollTimer = null;
 
-function randCode(){
-  return String(Math.floor(100000 + Math.random()*900000));
-}
+function setStatus(t){ elStatus.textContent = t || ""; }
+
+function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
 
 function setQrForCode(code){
+  inputCode.value = code;
+
+  // If QRCode library isn't available, tell the user clearly (no silent failure)
+  if (typeof QRCode === "undefined") {
+    qrFallback.textContent = "QR library not loaded.\nCheck qrcode.min.js exists.";
+    return;
+  }
+
+  qrFallback.style.display = "none";
   qrBox.innerHTML = "";
-  new QRCode(qrBox,{
+
+  new QRCode(qrBox, {
     text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
-    width:240,
-    height:240,
+    width: 240,
+    height: 240,
     correctLevel: QRCode.CorrectLevel.M
   });
-  inputCode.value = code;
 }
 
 async function apiState(){
   const r = await fetch(WORKER_BASE + "/state?code=" + encodeURIComponent(CODE));
   return r.json();
 }
-
 async function apiCmd(name){
-  const r = await fetch(WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + name,{method:"POST"});
+  const r = await fetch(WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + name, { method:"POST" });
   return r.json();
 }
 
@@ -289,12 +199,11 @@ function setPlayingIcon(p){
   iconPlay.style.display = p ? "none" : "block";
   iconPause.style.display = p ? "block" : "none";
 }
-
 function setDeviceIcon(type){
   iconPhone.style.display="none";
   iconComputer.style.display="none";
   if(!type) return;
-  const t=type.toLowerCase();
+  const t=String(type).toLowerCase();
   if(t.includes("phone")||t.includes("smartphone")) iconPhone.style.display="block";
   else iconComputer.style.display="block";
 }
@@ -302,22 +211,23 @@ function setDeviceIcon(type){
 function chooseArt(item){
   const imgs=item?.album?.images;
   if(!imgs||!imgs.length) return "";
-  return imgs[Math.floor(imgs.length/2)].url||imgs[0].url;
+  return imgs[Math.floor(imgs.length/2)]?.url || imgs[0]?.url || "";
 }
 
 async function refresh(){
   const s=await apiState();
-  if(!s.ok||!s.active){
+  if(!s.ok || !s.active){
     elTrack.textContent="No active device";
     elArtist.textContent="Start playback on phone";
     elArtWrap.style.display="none";
+    setPlayingIcon(false);
     return;
   }
   const pb=s.data;
   elTrack.textContent=pb.item?.name||"Unknown";
   elArtist.textContent=pb.item?.artists?.map(a=>a.name).join(", ")||"";
   setDeviceIcon(pb.device?.type||"");
-  setPlayingIcon(pb.is_playing);
+  setPlayingIcon(!!pb.is_playing);
 
   const art=chooseArt(pb.item);
   if(art){
@@ -331,35 +241,51 @@ async function refresh(){
 
 function connectWithCode(c){
   CODE=c;
-  localStorage.setItem("kindlifyre_code",CODE);
+  localStorage.setItem("kindlifyre_code", CODE);
   elControls.style.display="flex";
   elUtility.style.display="flex";
   refresh();
-  pollTimer=setInterval(refresh,12000);
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer=setInterval(refresh, 12000);
 }
 
 document.getElementById("connect").onclick=function(){
   const c=inputCode.value.trim();
-  if(!/^\d{6}$/.test(c)) return;
+  if(!/^\d{6}$/.test(c)){ setStatus("Enter your 6-digit code."); return; }
   connectWithCode(c);
 };
 
 document.getElementById("refresh").onclick=refresh;
 
 document.getElementById("newCode").onclick=function(){
-  clearInterval(pollTimer);
+  if (pollTimer) clearInterval(pollTimer);
   elControls.style.display="none";
   elUtility.style.display="none";
   elArtWrap.style.display="none";
   const fresh=randCode();
-  localStorage.setItem("kindlifyre_code",fresh);
+  localStorage.setItem("kindlifyre_code", fresh);
+  qrBox.innerHTML = '<div class="qrFallback" id="qrFallback2">Loading QR…</div>';
   setQrForCode(fresh);
+  setStatus("New code generated. Scan again to pair.");
+};
+
+document.getElementById("next").onclick = async()=>{ await apiCmd("next"); await new Promise(r=>setTimeout(r,450)); await refresh(); };
+document.getElementById("prev").onclick = async()=>{ await apiCmd("prev"); await new Promise(r=>setTimeout(r,450)); await refresh(); };
+document.getElementById("toggle").onclick = async()=>{
+  const s = await apiState();
+  if (!s.ok || !s.active) { setStatus("Start playback first."); return; }
+  await apiCmd(s.data.is_playing ? "pause" : "play");
+  await new Promise(r=>setTimeout(r,350));
+  await refresh();
 };
 
 (function init(){
+  setStatus("Scan QR to pair, then Connect.");
+  setPlayingIcon(false);
+
   const saved=localStorage.getItem("kindlifyre_code");
-  const code=/^\d{6}$/.test(saved||"")?saved:randCode();
-  localStorage.setItem("kindlifyre_code",code);
+  const code=/^\d{6}$/.test(saved||"") ? saved : randCode();
+  localStorage.setItem("kindlifyre_code", code);
   setQrForCode(code);
 })();
 </script>
