@@ -9,31 +9,53 @@
 :root{
   --fg:#000;
   --muted:#333;
-  --border:3px;
+  --border:3px;          /* heavy borders used elsewhere */
+  --softBorder:2px;      /* softer border for outer QR card */
   --radius:16px;
   --pill:999px;
 }
-body{font-family:sans-serif;background:#fff;color:#000;margin:18px 10px;text-align:center;}
+
+body{
+  font-family:sans-serif;
+  background:#fff;
+  color:#000;
+  margin:18px 10px;
+  text-align:center;
+}
+
 .wrap{max-width:520px;margin:0 auto;}
 
+/* Outer pairing card (soft) */
 .qrArea{
-  width:260px;
+  width:292px;
   margin:0 auto 18px;
-  padding:16px 10px 12px; /* more air above QR */
-  border:var(--border) solid var(--fg);
+  padding:22px 14px 18px;               /* more air above */
+  border:var(--softBorder) solid var(--fg);
   border-radius:var(--radius);
 }
-#qrBox{width:240px;height:240px;margin:6px auto 0;display:block;position:relative;}
+
+/* QR container */
+#qrBox{
+  width:260px;
+  height:260px;
+  margin:8px auto 0;
+  display:block;
+  position:relative;
+}
+
+/* QR itself: square edges */
 #qrBox img,#qrBox canvas,#qrBox table{
   border:var(--border) solid var(--fg);
-  border-radius:0; /* square QR */
-  width:240px !important;
-  height:240px !important;
+  border-radius:0;
+  width:260px !important;
+  height:260px !important;
 }
+
+/* Placeholder / errors */
 .qrFallback{
-  width:240px;height:240px;
+  width:260px;height:260px;
   border:var(--border) dashed var(--fg);
-  border-radius:14px;
+  border-radius:0;
   display:block;
   font-size:14px;
   color:var(--muted);
@@ -43,44 +65,133 @@ body{font-family:sans-serif;background:#fff;color:#000;margin:18px 10px;text-ali
   line-height:1.3;
   text-align:center;
 }
+
+/* Divider between QR and manual entry */
+.divider{
+  width:260px;
+  margin:16px auto 0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--muted);
+  font-size:13px;
+}
+.divider:before,
+.divider:after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:#000;
+  opacity:0.35; /* soften line */
+}
+
+/* Manual entry (secondary) */
 .codeLine{
   display:flex;
-  flex-direction:column;     /* stack vertically */
+  flex-direction:column;
   justify-content:center;
   align-items:center;
-  gap:14px;                  /* space between input + button */
-  margin-top:20px;           /* more space under QR */
+  gap:12px;           /* input/button spacing */
+  margin-top:12px;    /* space under divider */
+  opacity:0.88;       /* slightly secondary */
 }
-input{
-  font-size:22px;padding:14px 14px;width:170px;text-align:center;
-  border:var(--border) solid var(--fg);border-radius:12px;background:#fff;
-}
-.pill{font-size:18px;padding:10px 16px;border:var(--border) solid var(--fg);border-radius:var(--pill);background:#fff;}
-.hint{font-size:14px;color:var(--muted);margin-top:8px;}
 
+input{
+  font-size:22px;
+  padding:10px 14px;
+  width:170px;
+  text-align:center;
+  border:var(--border) solid var(--fg);
+  border-radius:12px;
+  background:#fff;
+}
+
+.pill{
+  font-size:17px;
+  padding:10px 22px;
+  border:2px solid var(--fg);          /* lighter than main borders */
+  border-radius:var(--pill);
+  background:#fff;
+}
+
+/* One instruction only, inside card */
+.hint{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:10px;
+  line-height:1.3;
+}
+
+/* Album art + playback */
 .artWrap{
-  width:280px;height:280px;margin:16px auto 12px;border:var(--border) solid var(--fg);
-  border-radius:14px;overflow:hidden;display:none;background:#fff;
+  width:280px;height:280px;
+  margin:16px auto 12px;
+  border:var(--border) solid var(--fg);
+  border-radius:14px;
+  overflow:hidden;
+  display:none;
+  background:#fff;
 }
 .artWrap img{width:100%;height:100%;object-fit:cover;}
 
-.track{font-size:20px;line-height:1.25;margin:10px 0 6px;min-height:52px;}
-.artist{font-size:16px;color:var(--muted);margin-bottom:6px;min-height:20px;}
+.track{
+  font-size:20px;
+  line-height:1.25;
+  margin:10px 0 6px;
+  min-height:52px;
+}
+.artist{
+  font-size:16px;
+  color:var(--muted);
+  margin-bottom:6px;
+  min-height:20px;
+}
 
-.deviceType{display:flex;justify-content:center;align-items:center;min-height:22px;margin-bottom:12px;}
+.deviceType{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:22px;
+  margin-bottom:12px;
+}
 
-.controls{display:none;justify-content:center;align-items:center;gap:18px;margin-top:10px;}
+/* Transport controls */
+.controls{
+  display:none;
+  justify-content:center;
+  align-items:center;
+  gap:18px;
+  margin-top:10px;
+}
 .roundBtn{
-  width:86px;height:86px;border-radius:999px;border:var(--border) solid var(--fg);
-  background:#fff;display:grid;place-items:center;user-select:none;
+  width:86px;height:86px;
+  border-radius:999px;
+  border:var(--border) solid var(--fg);
+  background:#fff;
+  display:grid;
+  place-items:center;
+  user-select:none;
 }
 .roundBtn.center{width:96px;height:96px;}
 .roundBtn:active{transform:scale(0.98);}
+
 svg{fill:#000;width:34px;height:34px;}
 .center svg{width:40px;height:40px;}
 
-.utility{display:none;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px;}
-#status{margin-top:12px;font-size:14px;color:var(--muted);min-height:18px;}
+.utility{
+  display:none;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+
+#status{
+  margin-top:12px;
+  font-size:14px;
+  color:var(--muted);
+  min-height:18px;
+}
 </style>
 </head>
 
@@ -92,14 +203,16 @@ svg{fill:#000;width:34px;height:34px;}
       <div class="qrFallback" id="qrFallback">Loading QR…</div>
     </div>
 
+    <div class="divider">OR</div>
+
     <div class="codeLine">
       <input id="code" inputmode="numeric" maxlength="6" placeholder="Pair code">
       <button id="connect" class="pill">Connect</button>
     </div>
 
     <div class="hint" id="hint">
-  Scan QR with your phone to pair, or enter the code manually.
-</div>
+      Scan the QR on your phone to pair. Manual code is a fallback.
+    </div>
   </div>
 
   <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
@@ -209,7 +322,7 @@ svg{fill:#000;width:34px;height:34px;}
 
     if (typeof window.QRCode === "undefined") {
       qrFallback.textContent =
-        "QR library not loaded.\n\nConfirm this URL works:\n/kindlifyre/qrcode.min.js\n\nManual code still works.";
+        "QR library not loaded.\n\nConfirm:\n/kindlifyre/qrcode.min.js\nexists.\n\nManual code still works.";
       hint.textContent = "Open pair.html on your phone and type the code manually.";
       return;
     }
@@ -217,8 +330,8 @@ svg{fill:#000;width:34px;height:34px;}
     qrBox.innerHTML = "";
     new window.QRCode(qrBox, {
       text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
-      width: 240,
-      height: 240,
+      width: 260,
+      height: 260,
       correctLevel: window.QRCode.CorrectLevel.M
     });
   }
@@ -280,8 +393,6 @@ svg{fill:#000;width:34px;height:34px;}
           elArt.src = art;
         }
         elArtWrap.style.display = "block";
-      } else {
-        elArtWrap.style.display = "none";
       }
       setStatus("");
     });
@@ -336,7 +447,7 @@ svg{fill:#000;width:34px;height:34px;}
   };
 
   (function init(){
-    setStatus("");
+    setStatus("");              /* no duplicate instructions outside */
     setPlayingIcon(false);
 
     var saved = "";
