@@ -1,43 +1,332 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Kindle Spotify Remote</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 50px;
-      background: white;
-      color: black;
-    }
-    button {
-      font-size: 24px;
-      padding: 15px 25px;
-      margin: 10px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kindle Spotify Remote</title>
+<style>
+  body { font-family: sans-serif; text-align: center; margin: 40px 10px; background: #fff; color: #000; }
+  h1 { font-size: 26px; margin-bottom: 10px; }
+  #status { font-size: 16px; margin: 10px 0 20px; }
+  #nowPlaying { font-size: 18px; margin: 15px 0; line-height: 1.3; }
+  button { font-size: 22px; padding: 16px 22px; margin: 8px; min-width: 120px; }
+  .row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .small { font-size: 16px; padding: 12px 16px; min-width: 140px; }
+  hr { margin: 24px auto; width: 90%; }
+</style>
 </head>
 <body>
 
 <h1>Kindle Spotify Remote</h1>
-<button id="login">Login with Spotify</button>
+<div id="status">Not logged in.</div>
+
+<div id="authControls" class="row">
+  <button id="login">Login with Spotify</button>
+  <button id="logout" class="small" style="display:none;">Logout</button>
+</div>
+
+<hr />
+
+<div id="playerControls" style="display:none;">
+  <div id="nowPlaying">—</div>
+  <div class="row">
+    <button id="prev">Prev</button>
+    <button id="toggle">Play/Pause</button>
+    <button id="next">Next</button>
+  </div>
+  <div class="row">
+    <button id="refresh" class="small">Refresh</button>
+  </div>
+</div>
 
 <script>
+  // Your settings
   const client_id = "3e747af201bc4ef58d8b0c81d7007d22";
   const redirect_uri = "https://andresmanzewi.github.io/kindlifyre/";
   const scope = "user-read-playback-state user-modify-playback-state user-read-currently-playing";
 
-  document.getElementById("login").onclick = () => {
-    const authUrl =
-      "https://accounts.spotify.com/authorize" +
-      "?response_type=token" +
-      "&client_id=" + client_id +
-      "&scope=" + encodeURIComponent(scope) +
-      "&redirect_uri=" + encodeURIComponent(redirect_uri);
+  // UI helpers
+  const elStatus = document.getElementById("status");
+  const elNow = document.getElementById("nowPlaying");
+  const authControls = document.getElementById("authControls");
+  const playerControls = document.getElementById("playerControls");
+  const btnLogin = document.getElementById("login");
+  const btnLogout = document.getElementById("logout");
 
-    window.location = authUrl;
-  };
+  function setStatus(msg) { elStatus.textContent = msg; }
+  function setNowPlaying(msg) { elNow.textContent = msg; }
+
+  // PKCE helpers
+  function generateRandomString(length) {
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let text = "";
+    for (let i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  }
+
+  async function sha256(plain) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plain);
+    return crypto.subtle.digest("SHA-256", data);
+  }
+
+  function base64urlencode(a) {
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(a)))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }
+
+  // Token storage
+  function saveTokens(tokenResponse) {
+    const now = Math.floor(Date.now() / 1000);
+    const expires_at = now + (tokenResponse.expires_in || 3600) - 30; // safety buffer
+    localStorage.setItem("access_token", tokenResponse.access_token || "");
+    if (tokenResponse.refresh_token) localStorage.setItem("refresh_token", tokenResponse.refresh_token);
+    localStorage.setItem("expires_at", String(expires_at));
+  }
+
+  function getAccessToken() {
+    return localStorage.getItem("access_token");
+  }
+
+  function isTokenExpired() {
+    const expires_at = Number(localStorage.getItem("expires_at") || "0");
+    const now = Math.floor(Date.now() / 1000);
+    return !expires_at || now >= expires_at;
+  }
+
+  function clearTokens() {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("expires_at");
+  }
+
+  // Auth flow
+  async function login() {
+    // Note: some Kindle browsers may not support crypto.subtle (needed for PKCE).
+    // Test on desktop first (you are doing that) then try Kindle.
+    const code_verifier = generateRandomString(64);
+    localStorage.setItem("code_verifier", code_verifier);
+
+    const hashed = await sha256(code_verifier);
+    const code_challenge = base64urlencode(hashed);
+
+    const authUrl = new URL("https://accounts.spotify.com/authorize");
+    authUrl.search = new URLSearchParams({
+      response_type: "code",
+      client_id,
+      scope,
+      redirect_uri,
+      code_challenge_method: "S256",
+      code_challenge
+    }).toString();
+
+    window.location = authUrl.toString();
+  }
+
+  async function exchangeCodeForToken(code) {
+    const code_verifier = localStorage.getItem("code_verifier");
+    if (!code_verifier) throw new Error("Missing code_verifier. Try Login again.");
+
+    const body = new URLSearchParams({
+      client_id,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri,
+      code_verifier
+    });
+
+    const res = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error("Token exchange failed: " + t);
+    }
+    return res.json();
+  }
+
+  async function refreshAccessToken() {
+    const refresh_token = localStorage.getItem("refresh_token");
+    if (!refresh_token) throw new Error("No refresh token available. Login again.");
+
+    const body = new URLSearchParams({
+      client_id,
+      grant_type: "refresh_token",
+      refresh_token
+    });
+
+    const res = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error("Refresh failed: " + t);
+    }
+    return res.json();
+  }
+
+  // Spotify API calls
+  async function spotifyFetch(url, options = {}) {
+    let token = getAccessToken();
+
+    if (!token || isTokenExpired()) {
+      // try refresh
+      const refreshed = await refreshAccessToken();
+      saveTokens(refreshed);
+      token = getAccessToken();
+    }
+
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: "Bearer " + token
+      }
+    });
+
+    // If token got invalidated, force relogin
+    if (res.status === 401) {
+      clearTokens();
+      updateUI();
+      throw new Error("Unauthorized (token expired/invalid). Please Login again.");
+    }
+
+    return res;
+  }
+
+  async function getPlayback() {
+    const res = await spotifyFetch("https://api.spotify.com/v1/me/player");
+    if (res.status === 204) {
+      return null; // no active device
+    }
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error("Playback fetch failed: " + t);
+    }
+    return res.json();
+  }
+
+  async function pause() {
+    const res = await spotifyFetch("https://api.spotify.com/v1/me/player/pause", { method: "PUT" });
+    if (!res.ok && res.status !== 204) throw new Error(await res.text());
+  }
+
+  async function play() {
+    const res = await spotifyFetch("https://api.spotify.com/v1/me/player/play", { method: "PUT" });
+    if (!res.ok && res.status !== 204) throw new Error(await res.text());
+  }
+
+  async function nextTrack() {
+    const res = await spotifyFetch("https://api.spotify.com/v1/me/player/next", { method: "POST" });
+    if (!res.ok && res.status !== 204) throw new Error(await res.text());
+  }
+
+  async function prevTrack() {
+    const res = await spotifyFetch("https://api.spotify.com/v1/me/player/previous", { method: "POST" });
+    if (!res.ok && res.status !== 204) throw new Error(await res.text());
+  }
+
+  async function togglePlayPause() {
+    const pb = await getPlayback();
+    if (!pb) throw new Error("No active device. Start playback on your phone/speaker first.");
+    if (pb.is_playing) await pause();
+    else await play();
+  }
+
+  let pollTimer = null;
+  async function refreshUIOnce() {
+    try {
+      const pb = await getPlayback();
+      if (!pb) {
+        setNowPlaying("No active device. Start playing on your phone/speaker, then tap Refresh.");
+        setStatus("Logged in. No active device.");
+        return;
+      }
+      const item = pb.item;
+      const name = item && item.name ? item.name : "Unknown track";
+      const artist = item && item.artists && item.artists[0] ? item.artists.map(a => a.name).join(", ") : "Unknown artist";
+      const device = pb.device && pb.device.name ? pb.device.name : "Unknown device";
+      setNowPlaying(`${name} — ${artist}\nDevice: ${device}`);
+      setStatus(pb.is_playing ? "Playing" : "Paused");
+    } catch (e) {
+      setStatus(String(e.message || e));
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(refreshUIOnce, 7000); // e-ink friendly cadence
+  }
+
+  function stopPolling() {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  // URL cleanup (remove ?code=... after exchange)
+  function clearUrlQuery() {
+    const clean = redirect_uri;
+    window.history.replaceState({}, document.title, clean);
+  }
+
+  function updateUI() {
+    const token = getAccessToken();
+    const loggedIn = !!token;
+
+    btnLogin.style.display = loggedIn ? "none" : "inline-block";
+    btnLogout.style.display = loggedIn ? "inline-block" : "none";
+    playerControls.style.display = loggedIn ? "block" : "none";
+
+    if (!loggedIn) {
+      setStatus("Not logged in.");
+      setNowPlaying("—");
+      stopPolling();
+    } else {
+      setStatus("Logged in.");
+      startPolling();
+      refreshUIOnce();
+    }
+  }
+
+  // Button wiring
+  btnLogin.onclick = () => login();
+  btnLogout.onclick = () => { clearTokens(); updateUI(); };
+
+  document.getElementById("refresh").onclick = () => refreshUIOnce();
+  document.getElementById("toggle").onclick = async () => { setStatus("Working..."); await togglePlayPause(); await refreshUIOnce(); };
+  document.getElementById("next").onclick = async () => { setStatus("Working..."); await nextTrack(); await new Promise(r => setTimeout(r, 400)); await refreshUIOnce(); };
+  document.getElementById("prev").onclick = async () => { setStatus("Working..."); await prevTrack(); await new Promise(r => setTimeout(r, 400)); await refreshUIOnce(); };
+
+  // On load: if we returned from Spotify with ?code=..., exchange it
+  (async function init() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+
+      if (code) {
+        setStatus("Finishing login...");
+        const tokenResponse = await exchangeCodeForToken(code);
+        saveTokens(tokenResponse);
+        clearUrlQuery();
+      }
+    } catch (e) {
+      setStatus(String(e.message || e));
+    } finally {
+      updateUI();
+    }
+  })();
 </script>
 
 </body>
