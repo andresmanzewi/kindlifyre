@@ -23,7 +23,7 @@ body{font-family:sans-serif;background:#fff;color:#000;margin:18px 10px;text-ali
   border:var(--border) solid var(--fg);
   border-radius:var(--radius);
 }
-#qrBox{width:240px;height:240px;margin:0 auto;display:grid;place-items:center;}
+#qrBox{width:240px;height:240px;margin:0 auto;display:block;position:relative;}
 #qrBox img,#qrBox canvas,#qrBox table{
   border:var(--border) solid var(--fg);
   border-radius:14px;
@@ -34,15 +34,15 @@ body{font-family:sans-serif;background:#fff;color:#000;margin:18px 10px;text-ali
   width:240px;height:240px;
   border:var(--border) dashed var(--fg);
   border-radius:14px;
-  display:grid;
-  place-items:center;
+  display:block;
   font-size:14px;
   color:var(--muted);
   padding:10px;
   box-sizing:border-box;
   white-space:pre-line;
+  line-height:1.3;
+  text-align:center;
 }
-
 .codeLine{
   display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;
 }
@@ -135,171 +135,214 @@ svg{fill:#000;width:34px;height:34px;}
 </div>
 
 <script>
-const WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
-const PAIR_URL_BASE = "https://andresmanzewi.github.io/kindlifyre/pair.html";
+(function(){
+  var WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
+  var PAIR_URL_BASE = "https://andresmanzewi.github.io/kindlifyre/pair.html";
 
-const elTrack = document.getElementById("track");
-const elArtist = document.getElementById("artist");
-const elStatus = document.getElementById("status");
-const elControls = document.getElementById("controls");
-const elUtility = document.getElementById("utility");
-const elArtWrap = document.getElementById("artWrap");
-const elArt = document.getElementById("art");
+  var elTrack = document.getElementById("track");
+  var elArtist = document.getElementById("artist");
+  var elStatus = document.getElementById("status");
+  var elControls = document.getElementById("controls");
+  var elUtility = document.getElementById("utility");
+  var elArtWrap = document.getElementById("artWrap");
+  var elArt = document.getElementById("art");
 
-const iconPlay = document.getElementById("iconPlay");
-const iconPause = document.getElementById("iconPause");
-const iconPhone = document.getElementById("iconPhone");
-const iconComputer = document.getElementById("iconComputer");
+  var iconPlay = document.getElementById("iconPlay");
+  var iconPause = document.getElementById("iconPause");
+  var iconPhone = document.getElementById("iconPhone");
+  var iconComputer = document.getElementById("iconComputer");
 
-const qrBox = document.getElementById("qrBox");
-const qrFallback = document.getElementById("qrFallback");
-const inputCode = document.getElementById("code");
-const hint = document.getElementById("hint");
+  var qrBox = document.getElementById("qrBox");
+  var qrFallback = document.getElementById("qrFallback");
+  var inputCode = document.getElementById("code");
+  var hint = document.getElementById("hint");
 
-let CODE = "";
-let pollTimer = null;
+  var CODE = "";
+  var pollTimer = null;
 
-function setStatus(t){ elStatus.textContent = t || ""; }
-function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
+  function setStatus(t){ elStatus.textContent = t || ""; }
 
-function setPlayingIcon(p){
-  iconPlay.style.display = p ? "none" : "block";
-  iconPause.style.display = p ? "block" : "none";
-}
-function setDeviceIcon(type){
-  iconPhone.style.display="none";
-  iconComputer.style.display="none";
-  if(!type) return;
-  const t=String(type).toLowerCase();
-  if(t.includes("phone")||t.includes("smartphone")) iconPhone.style.display="block";
-  else iconComputer.style.display="block";
-}
-function chooseArt(item){
-  const imgs=item?.album?.images;
-  if(!imgs||!imgs.length) return "";
-  return imgs[Math.floor(imgs.length/2)]?.url || imgs[0]?.url || "";
-}
-
-function loadQrLib(cb){
-  // Load from same origin to avoid Kindle cross-domain issues
-  var s = document.createElement("script");
-  s.src = "./qrcode.min.js";
-  s.onload = function(){ cb(true); };
-  s.onerror = function(){ cb(false); };
-  document.body.appendChild(s);
-
-  // Timeout (Kindle sometimes neither onload nor onerror)
-  setTimeout(function(){
-    if (typeof QRCode === "undefined") cb(false);
-  }, 2500);
-}
-
-function renderQrFor(code){
-  inputCode.value = code;
-
-  if (typeof QRCode === "undefined") {
-    qrFallback.textContent =
-      "QR failed to load.\n\nCheck:\n/kindlifyre/qrcode.min.js\nexists.\n\nManual code still works.";
-    hint.textContent = "Type the code manually on your phone pairing page.";
-    return;
+  function randCode(){
+    return String(Math.floor(100000 + Math.random()*900000));
   }
 
-  qrBox.innerHTML = "";
-  new QRCode(qrBox,{
-    text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
-    width:240,
-    height:240,
-    correctLevel: QRCode.CorrectLevel.M
-  });
-}
-
-async function apiState(){
-  const r = await fetch(WORKER_BASE + "/state?code=" + encodeURIComponent(CODE));
-  return r.json();
-}
-async function apiCmd(name){
-  const r = await fetch(WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + name, { method:"POST" });
-  return r.json();
-}
-
-async function refresh(){
-  const s = await apiState();
-  if(!s.ok || !s.active){
-    elTrack.textContent="No active device";
-    elArtist.textContent="Start playback on phone";
-    elArtWrap.style.display="none";
-    setPlayingIcon(false);
-    return;
+  function setPlayingIcon(isPlaying){
+    iconPlay.style.display = isPlaying ? "none" : "block";
+    iconPause.style.display = isPlaying ? "block" : "none";
   }
-  const pb = s.data;
-  elTrack.textContent = pb.item?.name || "Unknown";
-  elArtist.textContent = pb.item?.artists?.map(a=>a.name).join(", ") || "";
-  setDeviceIcon(pb.device?.type || "");
-  setPlayingIcon(!!pb.is_playing);
 
-  const art = chooseArt(pb.item);
-  if (art) {
-    if (elArt.getAttribute("data-src") !== art) {
-      elArt.setAttribute("data-src", art);
-      elArt.src = art;
+  function setDeviceIcon(type){
+    iconPhone.style.display = "none";
+    iconComputer.style.display = "none";
+    if (!type) return;
+    var t = String(type).toLowerCase();
+    if (t.indexOf("phone") !== -1 || t.indexOf("smartphone") !== -1) iconPhone.style.display = "block";
+    else iconComputer.style.display = "block";
+  }
+
+  function chooseArt(item){
+    if (!item || !item.album || !item.album.images || !item.album.images.length) return "";
+    var imgs = item.album.images;
+    var mid = imgs[Math.floor(imgs.length/2)];
+    return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
+  }
+
+  function loadQrLib(cb){
+    var s = document.createElement("script");
+    s.src = "./qrcode.min.js";
+    s.onload = function(){ cb(true); };
+    s.onerror = function(){ cb(false); };
+    document.body.appendChild(s);
+
+    setTimeout(function(){
+      if (typeof window.QRCode === "undefined") cb(false);
+    }, 3000);
+  }
+
+  function renderQrFor(code){
+    inputCode.value = code;
+
+    if (typeof window.QRCode === "undefined") {
+      qrFallback.textContent =
+        "QR library not loaded.\n\nConfirm this URL works:\n/kindlifyre/qrcode.min.js\n\nManual code still works.";
+      hint.textContent = "Open pair.html on your phone and type the code manually.";
+      return;
     }
-    elArtWrap.style.display="block";
+
+    qrBox.innerHTML = "";
+    new window.QRCode(qrBox, {
+      text: PAIR_URL_BASE + "?code=" + encodeURIComponent(code),
+      width: 240,
+      height: 240,
+      correctLevel: window.QRCode.CorrectLevel.M
+    });
   }
-}
 
-function connectWithCode(c){
-  CODE = c;
-  localStorage.setItem("kindlifyre_code", CODE);
-  elControls.style.display="flex";
-  elUtility.style.display="flex";
-  refresh();
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(refresh, 12000);
-}
+  function apiState(done){
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", WORKER_BASE + "/state?code=" + encodeURIComponent(CODE), true);
+    xhr.onreadystatechange = function(){
+      if (xhr.readyState !== 4) return;
+      try { done(JSON.parse(xhr.responseText)); }
+      catch(e){ done({ ok:false, error:"bad json" }); }
+    };
+    xhr.send(null);
+  }
 
-document.getElementById("connect").onclick = function(){
-  const c = inputCode.value.trim();
-  if(!/^\d{6}$/.test(c)){ setStatus("Enter your 6-digit code."); return; }
-  connectWithCode(c);
-};
+  function apiCmd(name, done){
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + encodeURIComponent(name), true);
+    xhr.onreadystatechange = function(){
+      if (xhr.readyState !== 4) return;
+      try { done(JSON.parse(xhr.responseText)); }
+      catch(e){ done({ ok:false, error:"bad json" }); }
+    };
+    xhr.send(null);
+  }
 
-document.getElementById("refresh").onclick = refresh;
+  function refresh(){
+    apiState(function(s){
+      if (!s || !s.ok) { setStatus("Error: " + (s && s.error ? s.error : "state")); return; }
 
-document.getElementById("newCode").onclick = function(){
-  if (pollTimer) clearInterval(pollTimer);
-  elControls.style.display="none";
-  elUtility.style.display="none";
-  elArtWrap.style.display="none";
-  const fresh = randCode();
-  localStorage.setItem("kindlifyre_code", fresh);
-  qrBox.innerHTML = '<div class="qrFallback" id="qrFallback">Loading QR…</div>';
-  renderQrFor(fresh);
-  setStatus("New code generated.");
-};
+      if (!s.active) {
+        elTrack.textContent = "No active device";
+        elArtist.textContent = "Start playback on phone";
+        elArtWrap.style.display = "none";
+        setDeviceIcon("");
+        setPlayingIcon(false);
+        return;
+      }
 
-document.getElementById("next").onclick = async()=>{ await apiCmd("next"); await new Promise(r=>setTimeout(r,450)); await refresh(); };
-document.getElementById("prev").onclick = async()=>{ await apiCmd("prev"); await new Promise(r=>setTimeout(r,450)); await refresh(); };
-document.getElementById("toggle").onclick = async()=>{
-  const s = await apiState();
-  if (!s.ok || !s.active) { setStatus("Start playback first."); return; }
-  await apiCmd(s.data.is_playing ? "pause" : "play");
-  await new Promise(r=>setTimeout(r,350));
-  await refresh();
-};
+      var pb = s.data || {};
+      var item = pb.item || null;
 
-(function init(){
-  setStatus("Scan QR to pair, then Connect.");
-  setPlayingIcon(false);
+      elTrack.textContent = item && item.name ? item.name : "Unknown";
+      if (item && item.artists && item.artists.length) {
+        var names = [];
+        for (var i=0;i<item.artists.length;i++) names.push(item.artists[i].name);
+        elArtist.textContent = names.join(", ");
+      } else {
+        elArtist.textContent = "";
+      }
 
-  const saved = localStorage.getItem("kindlifyre_code");
-  const code = (/^\d{6}$/.test(saved||"")) ? saved : randCode();
-  localStorage.setItem("kindlifyre_code", code);
+      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
+      setPlayingIcon(!!pb.is_playing);
 
-  // Load QR lib asynchronously, then render
-  loadQrLib(function(ok){
-    // If it loaded, QRCode is defined. If not, we render fallback message.
-    renderQrFor(code);
-  });
+      var art = chooseArt(item);
+      if (art) {
+        if (elArt.getAttribute("data-src") !== art) {
+          elArt.setAttribute("data-src", art);
+          elArt.src = art;
+        }
+        elArtWrap.style.display = "block";
+      } else {
+        elArtWrap.style.display = "none";
+      }
+      setStatus("");
+    });
+  }
+
+  function connectWithCode(c){
+    CODE = c;
+    try { localStorage.setItem("kindlifyre_code", CODE); } catch(e) {}
+    elControls.style.display = "flex";
+    elUtility.style.display = "flex";
+    refresh();
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(refresh, 12000);
+  }
+
+  document.getElementById("connect").onclick = function(){
+    var c = (inputCode.value || "").replace(/\s+/g,"");
+    if (!/^\d{6}$/.test(c)) { setStatus("Enter 6 digits."); return; }
+    connectWithCode(c);
+  };
+
+  document.getElementById("refresh").onclick = function(){ refresh(); };
+
+  document.getElementById("newCode").onclick = function(){
+    if (pollTimer) clearInterval(pollTimer);
+    elControls.style.display = "none";
+    elUtility.style.display = "none";
+    elArtWrap.style.display = "none";
+    elTrack.textContent = "—";
+    elArtist.textContent = "";
+    setDeviceIcon("");
+    setPlayingIcon(false);
+
+    var fresh = randCode();
+    try { localStorage.setItem("kindlifyre_code", fresh); } catch(e) {}
+    qrBox.innerHTML = '<div class="qrFallback">Loading QR…</div>';
+    renderQrFor(fresh);
+    setStatus("New code generated.");
+  };
+
+  document.getElementById("next").onclick = function(){
+    apiCmd("next", function(){ setTimeout(refresh, 500); });
+  };
+  document.getElementById("prev").onclick = function(){
+    apiCmd("prev", function(){ setTimeout(refresh, 500); });
+  };
+  document.getElementById("toggle").onclick = function(){
+    apiState(function(s){
+      if (!s || !s.ok || !s.active) { setStatus("Start playback first."); return; }
+      apiCmd(s.data && s.data.is_playing ? "pause" : "play", function(){ setTimeout(refresh, 400); });
+    });
+  };
+
+  (function init(){
+    setStatus("Scan QR to pair, then Connect.");
+    setPlayingIcon(false);
+
+    var saved = "";
+    try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
+
+    var code = /^\d{6}$/.test(saved) ? saved : randCode();
+    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
+
+    loadQrLib(function(){ renderQrFor(code); });
+  })();
+
 })();
 </script>
 
