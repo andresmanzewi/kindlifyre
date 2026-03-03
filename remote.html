@@ -6,12 +6,7 @@
 <title>Kindle Spotify Remote</title>
 
 <style>
-:root{
-  --fg:#000;
-  --muted:#333;
-  --border:2px;
-  --radius:18px;
-}
+:root{ --fg:#000; --muted:#333; --border:2px; --radius:18px; }
 
 body{
   font-family:sans-serif;
@@ -23,9 +18,8 @@ body{
 
 .wrap{max-width:640px;margin:0 auto;}
 
-/* Wider than before, but not huge */
 .card{
-  width:420px;
+  width:440px;
   max-width:92vw;
   margin:0 auto 18px;
   padding:20px 16px 18px;
@@ -34,51 +28,24 @@ body{
   box-sizing:border-box;
 }
 
-/* Pairing card */
-#qrBox{
-  width:300px;
-  height:300px;
-  margin:8px auto 0;
-}
-
+/* Pair card */
+#qrBox{ width:300px; height:300px; margin:8px auto 0; }
 #qrBox img,#qrBox canvas,#qrBox table{
   border:2px solid var(--fg);
-  border-radius:0;
   width:300px !important;
   height:300px !important;
+  border-radius:0;
 }
-
 .qrFallback{
   width:300px;height:300px;
   border:2px dashed var(--fg);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:14px;
-  color:var(--muted);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--muted);
   box-sizing:border-box;
 }
-
-.divider{
-  width:300px;
-  margin:18px auto 0;
-  display:flex;
-  align-items:center;
-}
-.divider:before,
-.divider:after{
-  content:"";
-  flex:1;
-  height:1px;
-  background:#000;
-  opacity:0.25;
-}
-
-.codeText{
-  margin-top:16px;
-  font-size:30px;
-  letter-spacing:6px;
-}
+.divider{ width:300px; margin:18px auto 0; display:flex; align-items:center; }
+.divider:before,.divider:after{ content:""; flex:1; height:1px; background:#000; opacity:0.25; }
+.codeText{ margin-top:16px; font-size:30px; letter-spacing:6px; }
 
 /* Player */
 .artWrap{
@@ -90,7 +57,7 @@ body{
   display:none;
   box-sizing:border-box;
 }
-.artWrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.artWrap img{ width:100%; height:100%; object-fit:cover; display:block; }
 
 .track{
   font-size:22px;
@@ -113,10 +80,7 @@ body{
   text-overflow:ellipsis;
 }
 
-.deviceType{
-  min-height:24px;
-  margin-bottom:6px;
-}
+.deviceType{ min-height:24px; margin-bottom:6px; }
 
 .stateDot{
   width:10px;height:10px;
@@ -133,7 +97,6 @@ body{
   gap:36px;
   margin-top:10px;
 }
-
 .roundBtn{
   width:82px;height:82px;
   border-radius:999px;
@@ -143,19 +106,11 @@ body{
   place-items:center;
   padding:0;
 }
+.roundBtn.center{ width:92px;height:92px; }
+.controls svg{ display:block; margin:0 auto; fill:#000; width:34px;height:34px; }
+.roundBtn.center svg{ width:40px;height:40px; }
 
-.roundBtn.center{
-  width:92px;height:92px;
-}
-
-.controls svg{
-  display:block;
-  margin:0 auto;
-  fill:#000;
-  width:34px;height:34px;
-}
-.roundBtn.center svg{width:40px;height:40px;}
-
+/* Hide any text status */
 #status{display:none;}
 </style>
 </head>
@@ -164,9 +119,7 @@ body{
 <div class="wrap">
 
   <div class="card" id="pairCard">
-    <div id="qrBox">
-      <div class="qrFallback">Loading…</div>
-    </div>
+    <div id="qrBox"><div class="qrFallback">Loading…</div></div>
     <div class="divider"></div>
     <div class="codeText" id="codeText">------</div>
   </div>
@@ -218,7 +171,6 @@ body{
 
 <script>
 (function(){
-
   var WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
   var PAIR_URL_BASE = "https://andresmanzewi.github.io/kindlifyre/pair.html";
 
@@ -241,30 +193,9 @@ body{
   var CODE = "";
   var pollTimer = null;
   var pairWatchTimer = null;
-
-  // warm-up: poll faster immediately after connect so UI fills quickly
   var warmUntil = 0;
 
-  function randCode(){
-    return String(Math.floor(100000 + Math.random()*900000));
-  }
-
-  function stopPolling(){
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  }
-
-  function startPolling(){
-    stopPolling();
-    if (!CODE) return;
-
-    var interval = (Date.now() < warmUntil) ? 1000 : 12000;
-
-    pollTimer = setInterval(function(){
-      refresh();
-      // when warm period ends, restart at slow interval
-      if (Date.now() >= warmUntil && interval !== 12000) startPolling();
-    }, interval);
-  }
+  function randCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
 
   function setPlayingIcon(isPlaying){
     iconPlay.style.display = isPlaying ? "none" : "block";
@@ -281,10 +212,11 @@ body{
     else iconComputer.style.display = "block";
   }
 
-  // Robust: do NOT rely on width field. Prefer middle image if present.
-  function chooseArt(item){
-    if (!item || !item.album || !item.album.images || !item.album.images.length) return "";
-    var imgs = item.album.images;
+  function chooseArt(playerData){
+    // expects Spotify /me/player JSON at playerData
+    if (!playerData || !playerData.item || !playerData.item.album || !playerData.item.album.images) return "";
+    var imgs = playerData.item.album.images;
+    if (!imgs.length) return "";
     var mid = imgs[Math.floor(imgs.length/2)];
     return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
   }
@@ -295,20 +227,14 @@ body{
     s.onload = function(){ cb(true); };
     s.onerror = function(){ cb(false); };
     document.body.appendChild(s);
-
-    setTimeout(function(){
-      if (typeof window.QRCode === "undefined") cb(false);
-    }, 2500);
   }
 
   function renderQrFor(code){
     codeText.textContent = code;
-
     if (typeof window.QRCode === "undefined") {
-      qrBox.innerHTML = '<div class="qrFallback">QR missing.\nCheck qrcode.min.js</div>';
+      qrBox.innerHTML = '<div class="qrFallback">QR missing</div>';
       return;
     }
-
     qrBox.innerHTML = "";
     new window.QRCode(qrBox, {
       text: PAIR_URL_BASE + "?p=" + encodeURIComponent(code),
@@ -320,7 +246,6 @@ body{
 
   function apiState(code, done){
     var xhr = new XMLHttpRequest();
-    // add t= to avoid any caching weirdness
     xhr.open("GET", WORKER_BASE + "/state?code=" + encodeURIComponent(code) + "&t=" + Date.now(), true);
     xhr.onreadystatechange = function(){
       if (xhr.readyState !== 4) return;
@@ -336,42 +261,53 @@ body{
     xhr.send(null);
   }
 
-  function setConnected(){
-    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
-
-    if (pairCard) pairCard.style.display = "none";
-    elControls.style.display = "flex";
-
-    warmUntil = Date.now() + 12000; // 12s warm-up
-    refresh();                      // immediate
-    startPolling();                 // fast then slow
+  function stopPolling(){
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   }
 
-  // Check fast at first so it feels instant, then slow down
+  function startPolling(){
+    stopPolling();
+    if (!CODE) return;
+
+    var interval = (Date.now() < warmUntil) ? 1200 : 8000;
+    pollTimer = setInterval(function(){
+      refresh();
+      if (Date.now() >= warmUntil && interval !== 8000) startPolling();
+    }, interval);
+  }
+
+  function setConnected(){
+    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
+    if (pairCard) pairCard.style.display = "none";
+
+    // Show controls immediately upon pairing
+    elControls.style.display = "flex";
+
+    warmUntil = Date.now() + 12000;
+    refresh();
+    startPolling();
+  }
+
   function startAutoConnectWatch(code){
     if (pairWatchTimer) clearInterval(pairWatchTimer);
 
+    // Fast check for first ~10s
     var tries = 0;
     pairWatchTimer = setInterval(function(){
       if (CODE) return;
-
       apiState(code, function(s){
         if (s && s.ok) {
           CODE = code;
           setConnected();
         }
       });
-
       tries++;
-      if (tries === 10) { // after ~10 seconds, reduce frequency
+      if (tries === 10) {
         clearInterval(pairWatchTimer);
         pairWatchTimer = setInterval(function(){
           if (CODE) return;
           apiState(code, function(s){
-            if (s && s.ok) {
-              CODE = code;
-              setConnected();
-            }
+            if (s && s.ok) { CODE = code; setConnected(); }
           });
         }, 4000);
       }
@@ -384,22 +320,24 @@ body{
     apiState(CODE, function(s){
       if (!s || !s.ok) return;
 
-      var pb = s.data || {};
-      var item = pb.item || null;
+      // If Spotify returns 204 -> active false (no current playback)
+      if (!s.active || !s.data) return;
 
-      // Track/artist can update even if "active" is false in some edge cases
-      if (item && item.name) elTrack.textContent = item.name;
+      var pb = s.data;
 
-      if (item && item.artists && item.artists.length) {
+      // Basic fields
+      if (pb.item && pb.item.name) elTrack.textContent = pb.item.name;
+
+      if (pb.item && pb.item.artists && pb.item.artists.length) {
         var names = [];
-        for (var i=0;i<item.artists.length;i++) names.push(item.artists[i].name);
+        for (var i=0;i<pb.item.artists.length;i++) names.push(pb.item.artists[i].name);
         elArtist.textContent = names.join(", ");
       }
 
       setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
       setPlayingIcon(!!pb.is_playing);
 
-      var art = chooseArt(item);
+      var art = chooseArt(pb);
       if (art) {
         if (elArt.getAttribute("data-src") !== art) {
           elArt.setAttribute("data-src", art);
@@ -426,28 +364,27 @@ body{
   document.getElementById("toggle").onclick = function(){
     if (!CODE) return;
     apiState(CODE, function(s){
-      if (!s || !s.ok) return;
-      var isPlaying = s.data && s.data.is_playing;
-      apiCmd(isPlaying ? "pause" : "play");
+      if (!s || !s.ok || !s.active || !s.data) return;
+      apiCmd(s.data.is_playing ? "pause" : "play");
       setTimeout(refresh, 300);
     });
   };
 
-  // INIT: keep code stable until you explicitly change it
-(function init(){
-  setPlayingIcon(false);
+  // INIT: stable code until you clear browser storage
+  (function init(){
+    setPlayingIcon(false);
 
-  var saved = "";
-  try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
+    var saved = "";
+    try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
 
-  var code = /^\d{6}$/.test(saved) ? saved : randCode();
-  try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
+    var code = /^\d{6}$/.test(saved) ? saved : randCode();
+    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
 
-  loadQrLib(function(){
-    renderQrFor(code);
-    startAutoConnectWatch(code);
-  });
-})();
+    loadQrLib(function(){
+      renderQrFor(code);
+      startAutoConnectWatch(code);
+    });
+  })();
 
 })();
 </script>
