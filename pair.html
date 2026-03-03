@@ -9,34 +9,47 @@
 :root{
   --fg:#000;
   --border:2px;
-  --pill:999px;
 }
+
+html, body{
+  height:100%;
+}
+
 body{
-  font-family:sans-serif;
+  margin:0;
   background:#fff;
   color:#000;
-  margin:40px 16px;
-  text-align:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:monospace;
 }
-.wrap{max-width:420px;margin:0 auto;}
+
+.wrap{
+  text-align:center;
+  max-width:420px;
+  padding:20px;
+}
 
 .code{
   font-size:34px;
   letter-spacing:6px;
-  margin:10px 0 26px;
+  margin-bottom:28px;
 }
 
 button{
+  font-family:monospace;
   font-size:18px;
-  padding:12px 28px;
+  padding:10px 26px;
   border:var(--border) solid var(--fg);
-  border-radius:var(--pill);
+  border-radius:999px;
   background:#fff;
 }
 
 .status{
-  margin-top:24px;
-  font-size:18px;
+  margin-top:28px;
+  font-size:22px;
+  letter-spacing:2px;
 }
 </style>
 </head>
@@ -44,12 +57,13 @@ button{
 <body>
 <div class="wrap">
   <div class="code" id="codeDisplay">------</div>
-  <button id="loginBtn">Login with Spotify</button>
+  <button id="loginBtn">LOGIN</button>
   <div class="status" id="status"></div>
 </div>
 
 <script>
 (function(){
+
   var CLIENT_ID = "3e747af201bc4ef58d8b0c81d7007d22";
   var REDIRECT_URI = "https://andresmanzewi.github.io/kindlifyre/pair.html";
   var SCOPES = "user-read-playback-state user-modify-playback-state user-read-currently-playing";
@@ -89,9 +103,10 @@ button{
     localStorage.setItem("pkce_verifier", verifier);
 
     sha256(verifier, function(hash){
-      if(!hash){ setStatus("Browser not supported."); return; }
+      if(!hash){ setStatus("UNSUPPORTED"); return; }
 
       var challenge = b64url(hash);
+
       var u = "https://accounts.spotify.com/authorize?" +
         "response_type=code" +
         "&client_id=" + encodeURIComponent(CLIENT_ID) +
@@ -117,16 +132,18 @@ button{
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "https://accounts.spotify.com/api/token", true);
     xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+
     xhr.onreadystatechange = function(){
       if(xhr.readyState !== 4) return;
 
-      if(xhr.status !== 200){ setStatus("Token error"); return; }
+      if(xhr.status !== 200){ setStatus("TOKEN ERROR"); return; }
 
       var tokens = JSON.parse(xhr.responseText);
-      if(!tokens.refresh_token){ setStatus("No refresh token"); return; }
+      if(!tokens.refresh_token){ setStatus("NO REFRESH TOKEN"); return; }
 
       sendRefreshToken(tokens.refresh_token);
     };
+
     xhr.send(body);
   }
 
@@ -136,12 +153,13 @@ button{
     var xhr = new XMLHttpRequest();
     xhr.open("POST", WORKER_BASE + "/pair", true);
     xhr.setRequestHeader("Content-Type","application/json");
+
     xhr.onreadystatechange = function(){
       if(xhr.readyState !== 4) return;
 
-      if(xhr.status !== 200){ setStatus("Pair failed"); return; }
+      if(xhr.status !== 200){ setStatus("PAIR FAILED"); return; }
 
-      codeDisplay.textContent = "Paired ✓";
+      codeDisplay.textContent = "PAIRED ✓";
       loginBtn.style.display = "none";
       setStatus("");
     };
@@ -158,7 +176,6 @@ button{
   (function init(){
     var params = new URLSearchParams(window.location.search);
 
-    // Pairing code comes from QR as ?p=123456
     var p = (params.get("p") || "").trim();
     if (/^\d{6}$/.test(p)) {
       localStorage.setItem("pair_code", p);
@@ -168,12 +185,10 @@ button{
       codeDisplay.textContent = (/^\d{6}$/.test(saved)) ? saved : "------";
     }
 
-    // Spotify returns ?code=AUTH_CODE
     var authCode = params.get("code");
     if (authCode) {
       setStatus("…");
       exchangeCodeForTokens(authCode);
-      // Clean URL (removes auth code from address bar)
       history.replaceState({}, document.title, REDIRECT_URI);
     }
   })();
