@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pair Kindle Remote</title></head>
+<body style="font-family:sans-serif;max-width:700px;margin:30px auto;padding:0 12px;">
+<h2>Pair Kindle Remote</h2>
+<p>1) Enter a 6-digit code you will also type on the Kindle.</p>
+<p>2) Tap “Login with Spotify”.</p>
+
+<label>Pair code (6 digits): <input id="code" inputmode="numeric" maxlength="6" style="font-size:18px;"></label>
+<br><br>
+<button id="login" style="font-size:18px;padding:12px 16px;">Login with Spotify</button>
+<p id="msg"></p>
+
+<script>
+const CLIENT_ID = "3e747af201bc4ef58d8b0c81d7007d22";
+const REDIRECT_URI = "https://andresmanzewi.github.io/kindlifyre/pair.html";
+const SCOPES = "user-read-playback-state user-modify-playback-state user-read-currently-playing";
+
+const WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
+const PAIR_SECRET = "kM8pQv2Lx93nR5aT0zY7wH";
+
+const msg = (t) => document.getElementById("msg").textContent = t;
+
+function randStr(len){
+  const p="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let s=""; for(let i=0;i<len;i++) s+=p[Math.floor(Math.random()*p.length)];
+  return s;
+}
+async function sha256(plain){
+  const data=new TextEncoder().encode(plain);
+  return crypto.subtle.digest("SHA-256", data);
+}
+function b64url(a){
+  return btoa(String.fromCharCode(...new Uint8Array(a)))
+    .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+
+async function startLogin(){
+  const code = document.getElementById("code").value.trim();
+  if(!/^\d{6}$/.test(code)) { msg("Enter a 6-digit code first."); return; }
+  localStorage.setItem("pair_code", code);
+
+  const verifier = randStr(64);
+  localStorage.setItem("pkce_verifier", verifier);
+  const challenge = b64url(await sha256(verifier));
+
+  const u = new URL("https://accounts.spotify.com/authorize");
+  u.search = new URLSearchParams({
+    response_type:"code",
+    client_id:CLIENT_ID,
+    redirect_uri:REDIRECT_URI,
+    scope:SCOPES,
+    code_challenge_method:"S256",
+    code_challenge:challenge
+  }).toString();
+  location.href = u.toString();
+}
+
+async function exchangeCodeForTokens(code){
+  const verifier = localStorage.getItem("pkce_verifier");
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: REDIRECT_URI,
+    code_verifier: verifier
+  });
+
+  const r = await fetch("https://accounts.spotify.com/api/token", {
+    method:"POST",
+    headers:{ "Content-Type":"application/x-www-form-urlencoded" },
+    body
+  });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sendRefreshToken(refresh_token){
+  const pair_code = localStorage.getItem("pair_code");
+  const r = await fetch(WORKER_BASE + "/pair", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ code: pair_code, refresh_token, secret: PAIR_SECRET })
+  });
+  if(!r.ok) throw new Error(await r.text());
+}
+
+(async function init(){
+  document.getElementById("login").onclick = startLogin;
+
+  const p = new URLSearchParams(location.search);
+  const code = p.get("code");
+  if(!code) return;
+
+  msg("Finishing pairing...");
+  try {
+    const tokens = await exchangeCodeForTokens(code);
+    if(!tokens.refresh_token) throw new Error("No refresh_token returned.");
+    await sendRefreshToken(tokens.refresh_token);
+    history.replaceState({}, document.title, REDIRECT_URI);
+    msg("Paired! Now open remote.html on your Kindle and enter the same 6-digit code.");
+  } catch(e) {
+    msg("Error: " + (e.message || e));
+  }
+})();
+</script>
+</body>
+</html>
