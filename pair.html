@@ -3,16 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pair Kindle Remote</title>
+<title>Pair</title>
 
 <style>
 :root{
   --fg:#000;
   --border:2px;
-  --radius:16px;
   --pill:999px;
 }
-
 body{
   font-family:sans-serif;
   background:#fff;
@@ -20,26 +18,12 @@ body{
   margin:40px 16px;
   text-align:center;
 }
-
-.wrap{
-  max-width:420px;
-  margin:0 auto;
-}
+.wrap{max-width:420px;margin:0 auto;}
 
 .code{
-  font-size:32px;
+  font-size:34px;
   letter-spacing:6px;
-  margin-bottom:30px;
-}
-
-input{
-  font-size:28px;
-  text-align:center;
-  border:none;
-  outline:none;
-  letter-spacing:6px;
-  width:200px;
-  margin-bottom:30px;
+  margin:10px 0 26px;
 }
 
 button{
@@ -51,7 +35,7 @@ button{
 }
 
 .status{
-  margin-top:30px;
+  margin-top:24px;
   font-size:18px;
 }
 </style>
@@ -59,21 +43,13 @@ button{
 
 <body>
 <div class="wrap">
-
-  <div id="codeDisplay" class="code"></div>
-  <input id="codeInput" inputmode="numeric" maxlength="6" placeholder="------">
-
-  <div>
-    <button id="loginBtn">Login with Spotify</button>
-  </div>
-
+  <div class="code" id="codeDisplay">------</div>
+  <button id="loginBtn">Login with Spotify</button>
   <div class="status" id="status"></div>
-
 </div>
 
 <script>
 (function(){
-
   var CLIENT_ID = "3e747af201bc4ef58d8b0c81d7007d22";
   var REDIRECT_URI = "https://andresmanzewi.github.io/kindlifyre/pair.html";
   var SCOPES = "user-read-playback-state user-modify-playback-state user-read-currently-playing";
@@ -82,8 +58,8 @@ button{
   var PAIR_SECRET = "kindlifyre-PAIR-2026-03-03-ANDRES";
 
   var codeDisplay = document.getElementById("codeDisplay");
-  var codeInput = document.getElementById("codeInput");
   var statusEl = document.getElementById("status");
+  var loginBtn = document.getElementById("loginBtn");
 
   function setStatus(t){ statusEl.textContent = t || ""; }
 
@@ -95,14 +71,9 @@ button{
   }
 
   function sha256(plain, cb){
-    if (!window.crypto || !window.crypto.subtle) {
-      cb(null);
-      return;
-    }
-    var data=new TextEncoder().encode(plain);
-    window.crypto.subtle.digest("SHA-256", data).then(function(buf){
-      cb(buf);
-    });
+    if (!window.crypto || !window.crypto.subtle) { cb(null); return; }
+    var data = new TextEncoder().encode(plain);
+    window.crypto.subtle.digest("SHA-256", data).then(function(buf){ cb(buf); });
   }
 
   function b64url(a){
@@ -111,22 +82,16 @@ button{
   }
 
   function startLogin(){
-    var code = (codeInput.value || "").replace(/\s+/g,"");
-    if(!/^\d{6}$/.test(code)) return;
-
-    localStorage.setItem("pair_code", code);
+    var pairCode = localStorage.getItem("pair_code") || "";
+    if (!/^\d{6}$/.test(pairCode)) return;
 
     var verifier = randStr(64);
     localStorage.setItem("pkce_verifier", verifier);
 
     sha256(verifier, function(hash){
-      if(!hash){
-        setStatus("Browser not supported.");
-        return;
-      }
+      if(!hash){ setStatus("Browser not supported."); return; }
 
       var challenge = b64url(hash);
-
       var u = "https://accounts.spotify.com/authorize?" +
         "response_type=code" +
         "&client_id=" + encodeURIComponent(CLIENT_ID) +
@@ -140,7 +105,7 @@ button{
   }
 
   function exchangeCodeForTokens(authCode){
-    var verifier = localStorage.getItem("pkce_verifier");
+    var verifier = localStorage.getItem("pkce_verifier") || "";
 
     var body =
       "client_id=" + encodeURIComponent(CLIENT_ID) +
@@ -152,45 +117,32 @@ button{
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "https://accounts.spotify.com/api/token", true);
     xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-
     xhr.onreadystatechange = function(){
       if(xhr.readyState !== 4) return;
 
-      if(xhr.status !== 200){
-        setStatus("Token error");
-        return;
-      }
+      if(xhr.status !== 200){ setStatus("Token error"); return; }
 
       var tokens = JSON.parse(xhr.responseText);
-      if(!tokens.refresh_token){
-        setStatus("No refresh token");
-        return;
-      }
+      if(!tokens.refresh_token){ setStatus("No refresh token"); return; }
 
       sendRefreshToken(tokens.refresh_token);
     };
-
     xhr.send(body);
   }
 
   function sendRefreshToken(refresh_token){
-    var pair_code = localStorage.getItem("pair_code");
+    var pair_code = localStorage.getItem("pair_code") || "";
 
     var xhr = new XMLHttpRequest();
     xhr.open("POST", WORKER_BASE + "/pair", true);
     xhr.setRequestHeader("Content-Type","application/json");
-
     xhr.onreadystatechange = function(){
       if(xhr.readyState !== 4) return;
 
-      if(xhr.status !== 200){
-        setStatus("Pair failed");
-        return;
-      }
+      if(xhr.status !== 200){ setStatus("Pair failed"); return; }
 
       codeDisplay.textContent = "Paired ✓";
-      codeInput.style.display = "none";
-      document.getElementById("loginBtn").style.display = "none";
+      loginBtn.style.display = "none";
       setStatus("");
     };
 
@@ -201,24 +153,29 @@ button{
     }));
   }
 
-  document.getElementById("loginBtn").onclick = startLogin;
+  loginBtn.onclick = startLogin;
 
   (function init(){
-
     var params = new URLSearchParams(window.location.search);
-    var qrCode = params.get("code");
 
-    if(qrCode && /^\d{6}$/.test(qrCode)){
-      codeInput.value = qrCode;
-      codeDisplay.textContent = qrCode;
+    // Pairing code comes from QR as ?p=123456
+    var p = (params.get("p") || "").trim();
+    if (/^\d{6}$/.test(p)) {
+      localStorage.setItem("pair_code", p);
+      codeDisplay.textContent = p;
+    } else {
+      var saved = localStorage.getItem("pair_code") || "";
+      codeDisplay.textContent = (/^\d{6}$/.test(saved)) ? saved : "------";
     }
 
+    // Spotify returns ?code=AUTH_CODE
     var authCode = params.get("code");
-    if(authCode && !/^\d{6}$/.test(authCode)){
-      setStatus("Finishing…");
+    if (authCode) {
+      setStatus("…");
       exchangeCodeForTokens(authCode);
+      // Clean URL (removes auth code from address bar)
+      history.replaceState({}, document.title, REDIRECT_URI);
     }
-
   })();
 
 })();
