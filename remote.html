@@ -433,17 +433,21 @@ body{
     });
   };
 
-  // INIT: always new code on load
-  (function init(){
-    setPlayingIcon(false);
+  // INIT: keep code stable until you explicitly change it
+(function init(){
+  setPlayingIcon(false);
 
-    var code = randCode();
+  var saved = "";
+  try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
 
-    loadQrLib(function(){
-      renderQrFor(code);
-      startAutoConnectWatch(code);
-    });
-  })();
+  var code = /^\d{6}$/.test(saved) ? saved : randCode();
+  try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
+
+  loadQrLib(function(){
+    renderQrFor(code);
+    startAutoConnectWatch(code);
+  });
+})();
 
 })();
 </script>
