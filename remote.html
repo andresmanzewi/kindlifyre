@@ -9,10 +9,8 @@
 :root{
   --fg:#000;
   --muted:#333;
-  --border:3px;
-  --softBorder:2px;
-  --radius:16px;
-  --pill:999px;
+  --border:2px;
+  --radius:18px;
 }
 
 body{
@@ -23,57 +21,47 @@ body{
   text-align:center;
 }
 
-.wrap{max-width:520px;margin:0 auto;}
+.wrap{max-width:600px;margin:0 auto;}
 
 .card{
-  width:292px;
-  margin:0 auto 16px;
-  padding:18px 14px 16px;
-  border:var(--softBorder) solid var(--fg);
+  width:360px;
+  margin:0 auto 18px;
+  padding:20px 16px 18px;
+  border:2px solid var(--fg);
   border-radius:var(--radius);
 }
 
 /* Pairing card */
 #pairCard{}
 
-/* QR */
 #qrBox{
-  width:260px;
-  height:260px;
+  width:300px;
+  height:300px;
   margin:8px auto 0;
-  display:block;
 }
 
 #qrBox img,#qrBox canvas,#qrBox table{
-  border:var(--border) solid var(--fg);
+  border:2px solid var(--fg);
   border-radius:0;
-  width:260px !important;
-  height:260px !important;
+  width:300px !important;
+  height:300px !important;
 }
 
 .qrFallback{
-  width:260px;height:260px;
-  border:var(--border) dashed var(--fg);
-  border-radius:0;
-  display:block;
-  font-size:14px;
-  color:var(--muted);
-  padding:10px;
-  box-sizing:border-box;
-  white-space:pre-line;
-  line-height:1.3;
-  text-align:center;
-}
-
-/* Divider */
-.divider{
-  width:260px;
-  margin:16px auto 0;
+  width:300px;height:300px;
+  border:2px dashed var(--fg);
   display:flex;
   align-items:center;
-  gap:10px;
-  font-size:12px;
+  justify-content:center;
+  font-size:14px;
   color:var(--muted);
+}
+
+.divider{
+  width:300px;
+  margin:18px auto 0;
+  display:flex;
+  align-items:center;
 }
 .divider:before,
 .divider:after{
@@ -84,32 +72,30 @@ body{
   opacity:0.25;
 }
 
-/* Code display */
 .codeText{
   margin-top:16px;
-  font-size:28px;
+  font-size:30px;
   letter-spacing:6px;
 }
 
 /* Player */
-.playerCard{ padding:14px 14px 16px; }
+.playerCard{}
 
 .artWrap{
-  width:264px;height:264px;
-  margin:0 auto 12px;
-  border:var(--border) solid var(--fg);
+  width:300px;height:300px;
+  margin:0 auto 14px;
+  border:2px solid var(--fg);
   border-radius:14px;
   overflow:hidden;
   display:none;
-  background:#fff;
 }
 .artWrap img{width:100%;height:100%;object-fit:cover;}
 
 .track{
-  font-size:20px;
+  font-size:22px;
   line-height:1.25;
   margin:8px 0 6px;
-  min-height:52px;
+  min-height:56px;
   overflow:hidden;
   text-overflow:ellipsis;
   display:-webkit-box;
@@ -120,18 +106,14 @@ body{
 .artist{
   font-size:16px;
   color:var(--muted);
-  margin-bottom:6px;
-  min-height:20px;
+  margin-bottom:8px;
+  white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  white-space:nowrap;
 }
 
 .deviceType{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:22px;
+  min-height:24px;
   margin-bottom:6px;
 }
 
@@ -139,7 +121,7 @@ body{
   width:10px;height:10px;
   border:2px solid #000;
   border-radius:999px;
-  margin:6px auto 12px;
+  margin:6px auto 16px;
 }
 .stateDot.playing{ background:#000; }
 
@@ -147,42 +129,26 @@ body{
   display:none;
   justify-content:center;
   align-items:center;
-  gap:18px;
-  margin-top:2px;
+  gap:30px;
+  margin-top:8px;
 }
 
 .roundBtn{
-  width:86px;height:86px;
+  width:82px;height:82px;
   border-radius:999px;
-  border:var(--border) solid var(--fg);
+  border:2px solid var(--fg);
   background:#fff;
   display:grid;
   place-items:center;
-  user-select:none;
 }
 
-.roundBtn.center{width:96px;height:96px;}
+.roundBtn.center{
+  width:92px;height:92px;
+}
 
 svg{fill:#000;width:34px;height:34px;}
 .center svg{width:40px;height:40px;}
 
-.utility{
-  display:none;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:14px;
-}
-
-.pill{
-  font-size:17px;
-  padding:10px 22px;
-  border:2px solid var(--fg);
-  border-radius:var(--pill);
-  background:#fff;
-}
-
-/* Hide status entirely */
 #status{display:none;}
 </style>
 </head>
@@ -190,20 +156,16 @@ svg{fill:#000;width:34px;height:34px;}
 <body>
 <div class="wrap">
 
-  <!-- Pairing card (auto-hides when connected) -->
   <div class="card" id="pairCard">
     <div id="qrBox">
-      <div class="qrFallback" id="qrFallback">Loading…</div>
+      <div class="qrFallback">Loading…</div>
     </div>
-
     <div class="divider"></div>
-
     <div class="codeText" id="codeText">------</div>
   </div>
 
-  <!-- Player card -->
   <div class="card playerCard">
-    <div class="artWrap" id="artWrap"><img id="art" alt=""></div>
+    <div class="artWrap" id="artWrap"><img id="art"></div>
 
     <div class="track" id="track">—</div>
     <div class="artist" id="artist"></div>
@@ -220,44 +182,47 @@ svg{fill:#000;width:34px;height:34px;}
     <div class="stateDot" id="stateDot"></div>
 
     <div class="controls" id="controls">
-      <button class="roundBtn" id="prev" aria-label="Previous">
-        <svg viewBox="0 0 64 64"><path d="M18 14h6v36h-6zM46 16 26 32l20 16V16z"></path></svg>
+      <button class="roundBtn" id="prev">
+        <svg viewBox="0 0 64 64">
+          <path d="M50 16v32L26 32l24-16zM14 16v32l10-8V24l-10-8z"></path>
+        </svg>
       </button>
 
-      <button class="roundBtn center" id="toggle" aria-label="Play/Pause">
-        <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;"><path d="M24 18v28l24-14-24-14z"></path></svg>
-        <svg id="iconPause" viewBox="0 0 64 64" style="display:none;"><path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path></svg>
+      <button class="roundBtn center" id="toggle">
+        <svg id="iconPlay" viewBox="0 0 64 64" style="display:none;">
+          <path d="M26 16v32l26-16-26-16z"></path>
+        </svg>
+        <svg id="iconPause" viewBox="0 0 64 64" style="display:none;">
+          <path d="M22 18h8v28h-8zM34 18h8v28h-8z"></path>
+        </svg>
       </button>
 
-      <button class="roundBtn" id="next" aria-label="Next">
-        <svg viewBox="0 0 64 64"><path d="M40 14h6v36h-6zM18 16v32l20-16-20-16z"></path></svg>
+      <button class="roundBtn" id="next">
+        <svg viewBox="0 0 64 64">
+          <path d="M14 16v32l24-16-24-16zM40 16v32l10-8V24l-10-8z"></path>
+        </svg>
       </button>
     </div>
 
-    <div class="utility" id="utility">
-      <button id="refresh" class="pill">Refresh</button>
-      <button id="sleep" class="pill">Sleep</button>
-      <button id="newCode" class="pill">New code</button>
-    </div>
-
-    <div id="status"></div>
   </div>
 
 </div>
 
 <script>
 (function(){
+
   var WORKER_BASE = "https://kindlifyre-api.andrespmanzewitsch.workers.dev";
   var PAIR_URL_BASE = "https://andresmanzewi.github.io/kindlifyre/pair.html";
 
   var pairCard = document.getElementById("pairCard");
+  var qrBox = document.getElementById("qrBox");
+  var codeText = document.getElementById("codeText");
 
   var elTrack = document.getElementById("track");
   var elArtist = document.getElementById("artist");
-  var elControls = document.getElementById("controls");
-  var elUtility = document.getElementById("utility");
   var elArtWrap = document.getElementById("artWrap");
   var elArt = document.getElementById("art");
+  var elControls = document.getElementById("controls");
 
   var iconPlay = document.getElementById("iconPlay");
   var iconPause = document.getElementById("iconPause");
@@ -265,14 +230,11 @@ svg{fill:#000;width:34px;height:34px;}
   var iconComputer = document.getElementById("iconComputer");
   var stateDot = document.getElementById("stateDot");
 
-  var qrBox = document.getElementById("qrBox");
-  var codeText = document.getElementById("codeText");
-  var sleepBtn = document.getElementById("sleep");
-
   var CODE = "";
   var pollTimer = null;
   var pairWatchTimer = null;
   var pollEnabled = true;
+  var longPressTimer = null;
 
   function randCode(){
     return String(Math.floor(100000 + Math.random()*900000));
@@ -285,7 +247,7 @@ svg{fill:#000;width:34px;height:34px;}
   function startPolling(){
     stopPolling();
     if (!pollEnabled) return;
-    pollTimer = setInterval(function(){ refresh(); }, 12000);
+    pollTimer = setInterval(refresh, 12000);
   }
 
   function setPlayingIcon(isPlaying){
@@ -299,7 +261,7 @@ svg{fill:#000;width:34px;height:34px;}
     iconComputer.style.display = "none";
     if (!type) return;
     var t = String(type).toLowerCase();
-    if (t.indexOf("phone") !== -1 || t.indexOf("smartphone") !== -1) iconPhone.style.display = "block";
+    if (t.indexOf("phone") !== -1) iconPhone.style.display = "block";
     else iconComputer.style.display = "block";
   }
 
@@ -308,35 +270,23 @@ svg{fill:#000;width:34px;height:34px;}
     var imgs = item.album.images;
     if (!imgs.length) return "";
     var mid = imgs[Math.floor(imgs.length/2)];
-    return (mid && mid.url) ? mid.url : (imgs[0] && imgs[0].url ? imgs[0].url : "");
+    return mid && mid.url ? mid.url : imgs[0].url;
   }
 
   function loadQrLib(cb){
     var s = document.createElement("script");
     s.src = "./qrcode.min.js";
-    s.onload = function(){ cb(true); };
-    s.onerror = function(){ cb(false); };
+    s.onload = function(){ cb(); };
     document.body.appendChild(s);
-
-    setTimeout(function(){
-      if (typeof window.QRCode === "undefined") cb(false);
-    }, 3000);
   }
 
   function renderQrFor(code){
     codeText.textContent = code;
-
-    if (typeof window.QRCode === "undefined") {
-      qrBox.innerHTML = '<div class="qrFallback">QR missing.\n\nCheck:\n/kindlifyre/qrcode.min.js</div>';
-      return;
-    }
-
     qrBox.innerHTML = "";
     new window.QRCode(qrBox, {
       text: PAIR_URL_BASE + "?p=" + encodeURIComponent(code),
-      width: 260,
-      height: 260,
-      correctLevel: window.QRCode.CorrectLevel.M
+      width: 300,
+      height: 300
     });
   }
 
@@ -346,39 +296,24 @@ svg{fill:#000;width:34px;height:34px;}
     xhr.onreadystatechange = function(){
       if (xhr.readyState !== 4) return;
       try { done(JSON.parse(xhr.responseText)); }
-      catch(e){ done({ ok:false }); }
+      catch(e){ done(null); }
     };
     xhr.send(null);
   }
 
-  function apiCmd(name){
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", WORKER_BASE + "/cmd?code=" + encodeURIComponent(CODE) + "&name=" + encodeURIComponent(name), true);
-    xhr.send(null);
-  }
-
   function setConnected(){
-    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
-
-    /* Hide pairing card once connected */
-    if (pairCard) pairCard.style.display = "none";
-
+    pairCard.style.display = "none";
     elControls.style.display = "flex";
-    elUtility.style.display = "flex";
     refresh();
     startPolling();
   }
 
   function startAutoConnectWatch(code){
-    if (pairWatchTimer) clearInterval(pairWatchTimer);
-
     pairWatchTimer = setInterval(function(){
-      if (CODE) { clearInterval(pairWatchTimer); pairWatchTimer = null; return; }
-
+      if (CODE) return;
       apiState(code, function(s){
-        if (s && s.ok) {
+        if (s && s.ok){
           CODE = code;
-          try { localStorage.setItem("kindlifyre_code", CODE); } catch(e) {}
           setConnected();
         }
       });
@@ -389,117 +324,93 @@ svg{fill:#000;width:34px;height:34px;}
     if (!CODE) return;
 
     apiState(CODE, function(s){
-      if (!s || !s.ok) return;
+      if (!s || !s.ok || !s.active) return;
 
-      if (!s.active) {
-        stopPolling();
-        return;
-      }
-
-      var pb = s.data || {};
-      var item = pb.item || null;
+      var pb = s.data;
+      var item = pb.item;
 
       elTrack.textContent = item && item.name ? item.name : "—";
 
-      if (item && item.artists && item.artists.length) {
+      if (item && item.artists){
         var names = [];
         for (var i=0;i<item.artists.length;i++) names.push(item.artists[i].name);
         elArtist.textContent = names.join(", ");
-      } else {
-        elArtist.textContent = "";
       }
 
-      setDeviceIcon(pb.device && pb.device.type ? pb.device.type : "");
-      setPlayingIcon(!!pb.is_playing);
+      setDeviceIcon(pb.device ? pb.device.type : "");
+      setPlayingIcon(pb.is_playing);
 
       var art = chooseArt(item);
-      if (art) {
-        if (elArt.getAttribute("data-src") !== art) {
+      if (art){
+        if (elArt.getAttribute("data-src") !== art){
           elArt.setAttribute("data-src", art);
           elArt.src = art;
         }
         elArtWrap.style.display = "block";
-      } else {
-        elArtWrap.style.display = "none";
       }
-
-      if (pollEnabled && !pollTimer) startPolling();
     });
   }
 
-  document.getElementById("sleep").onclick = function(){
+  /* Hidden gestures */
+
+  elArtWrap.addEventListener("mousedown", function(){
+    longPressTimer = setTimeout(function(){
+      generateNewCode();
+    }, 1200);
+  });
+
+  elArtWrap.addEventListener("mouseup", function(){
+    clearTimeout(longPressTimer);
+  });
+
+  elArtWrap.addEventListener("dblclick", function(){
     pollEnabled = !pollEnabled;
-    sleepBtn.textContent = pollEnabled ? "Sleep" : "Wake";
     if (!pollEnabled) stopPolling();
-    else { refresh(); startPolling(); }
-  };
+    else startPolling();
+  });
 
-  document.getElementById("refresh").onclick = function(){
-    refresh();
-  };
-
-  document.getElementById("newCode").onclick = function(){
+  function generateNewCode(){
     stopPolling();
-    if (pairWatchTimer) { clearInterval(pairWatchTimer); pairWatchTimer = null; }
-
     CODE = "";
     elControls.style.display = "none";
-    elUtility.style.display = "none";
-    elArtWrap.style.display = "none";
-    elTrack.textContent = "—";
-    elArtist.textContent = "";
-    setDeviceIcon("");
-    setPlayingIcon(false);
-
-    pollEnabled = true;
-    sleepBtn.textContent = "Sleep";
-
-    /* Show pairing card again */
-    if (pairCard) pairCard.style.display = "block";
-
+    pairCard.style.display = "block";
     var fresh = randCode();
-    try { localStorage.setItem("kindlifyre_code", fresh); } catch(e) {}
-
-    qrBox.innerHTML = '<div class="qrFallback">Loading…</div>';
     renderQrFor(fresh);
     startAutoConnectWatch(fresh);
-  };
+  }
 
   document.getElementById("next").onclick = function(){
     if (!CODE) return;
-    apiCmd("next");
-    setTimeout(function(){ refresh(); }, 500);
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=next", true);
+    xhr.send(null);
   };
 
   document.getElementById("prev").onclick = function(){
     if (!CODE) return;
-    apiCmd("prev");
-    setTimeout(function(){ refresh(); }, 500);
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=prev", true);
+    xhr.send(null);
   };
 
   document.getElementById("toggle").onclick = function(){
     if (!CODE) return;
     apiState(CODE, function(s){
       if (!s || !s.ok || !s.active) return;
-      apiCmd((s.data && s.data.is_playing) ? "pause" : "play");
-      setTimeout(function(){ refresh(); }, 400);
+      var cmd = s.data.is_playing ? "pause" : "play";
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", WORKER_BASE + "/cmd?code=" + CODE + "&name=" + cmd, true);
+      xhr.send(null);
     });
   };
 
-  (function init(){
-    setPlayingIcon(false);
+  /* INIT */
 
-    var saved = "";
-    try { saved = localStorage.getItem("kindlifyre_code") || ""; } catch(e) {}
-
-    var code = /^\d{6}$/.test(saved) ? saved : randCode();
-    try { localStorage.setItem("kindlifyre_code", code); } catch(e) {}
-
-    loadQrLib(function(){
-      renderQrFor(code);
-      startAutoConnectWatch(code);
-    });
-  })();
+  var code = randCode();
+  loadQrLib(function(){
+    renderQrFor(code);
+    startAutoConnectWatch(code);
+  });
 
 })();
 </script>
