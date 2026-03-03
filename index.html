@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Kindle Spotify Remote</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      background: white;
+      color: black;
+    }
+    button {
+      font-size: 24px;
+      padding: 15px 25px;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Kindle Spotify Remote</h1>
+<button id="login">Login with Spotify</button>
+
+<script>
+  const client_id = "3e747af201bc4ef58d8b0c81d7007d22";
+  const redirect_uri = "https://andresmanzewi.github.io/kindlifyre/";
+  const scope = "user-read-playback-state user-modify-playback-state user-read-currently-playing";
+
+  document.getElementById("login").onclick = () => {
+    const authUrl =
+      "https://accounts.spotify.com/authorize" +
+      "?response_type=token" +
+      "&client_id=" + client_id +
+      "&scope=" + encodeURIComponent(scope) +
+      "&redirect_uri=" + encodeURIComponent(redirect_uri);
+
+    window.location = authUrl;
+  };
+</script>
+
+</body>
+</html>
